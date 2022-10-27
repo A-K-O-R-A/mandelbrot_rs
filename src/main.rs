@@ -18,26 +18,37 @@ fn main() {
     let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
 
     let x_range = 0..=IMAGE_SIZE.0;
-    let map = x_range.into_par_iter().map(|x| {
-        let y_range = 0..=IMAGE_SIZE.1;
-        y_range.into_par_iter().map(move |y| {
-            //Get iteration count
-            let iter = mandelbrot(x as f64, y as f64);
+    let map = x_range
+        .into_par_iter()
+        .map(|x| {
+            let y_range = 0..=IMAGE_SIZE.1;
+            (
+                x,
+                y_range
+                    .into_par_iter()
+                    .map(move |y| {
+                        //Get iteration count
+                        let iter = mandelbrot(x as f64, y as f64);
 
-            iteration_to_color(iter)
+                        (y, iteration_to_color(iter))
+                    })
+                    .collect::<Vec<(u32, Color)>>(),
+            )
         })
-    });
+        .collect::<Vec<(u32, Vec<(u32, Color)>)>>();
 
-    /*
-    //Create rect
-    let rect = Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
+    for (x, y_vec) in map {
+        for (y, color) in y_vec {
+            //Create rect
+            let rect = Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
 
-    //Change color
-    paint.shader = Shader::SolidColor(iteration_to_color(iter));
+            //Change color
+            paint.shader = Shader::SolidColor(color);
 
-    //paint pixel
-    pixmap.fill_rect(rect, &paint, Transform::identity(), None);
-    */
+            //paint pixel
+            pixmap.fill_rect(rect, &paint, Transform::identity(), None);
+        }
+    }
 
     pixmap.save_png("image.png").unwrap();
 }
