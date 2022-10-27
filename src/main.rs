@@ -1,4 +1,3 @@
-use num_complex::Complex;
 use tiny_skia::*;
 
 const X_RANGE: (f64, f64) = (-2.00, 0.47);
@@ -6,7 +5,7 @@ const X_OFF: f64 = (X_RANGE.0 + X_RANGE.1) / 2.;
 const Y_RANGE: (f64, f64) = (-1.12, 1.12);
 const Y_OFF: f64 = (Y_RANGE.0 + Y_RANGE.1) / 2.;
 
-const IMAGE_SIZE: (u32, u32) = (500, 500);
+const IMAGE_SIZE: (u32, u32) = (4000, 4000);
 const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
 const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
 
@@ -15,9 +14,6 @@ const RADIUS: f64 = 2.;
 
 fn main() {
     let mut paint = Paint::default();
-    //paint.set_color_rgba8(0, 127, 0, 200);
-    //paint.anti_alias = true;
-
     let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
 
     let mut x = 0.;
@@ -26,15 +22,17 @@ fn main() {
         while (y as u32) < IMAGE_SIZE.1 {
             let rect = Rect::from_xywh(x, y, 1., 1.).expect("Couldn't create rect");
 
+            //Get iteration count
             let iter = mandelbrot(x as f64, y as f64);
+
+            //Change color
             paint.shader = Shader::SolidColor(iteration_to_color(iter));
-            //paint.set_color_rgba8(100, 0, ((iter / MAX_ITERATION) * 255) as u8, 255);
+
+            //paint pixel
             pixmap.fill_rect(rect, &paint, Transform::identity(), None);
             y += 1.;
-            //println!("{x} : {y}");
         }
         x += 1.;
-        //println!("{x} : {y}");
     }
 
     pixmap.save_png("image.png").unwrap();
