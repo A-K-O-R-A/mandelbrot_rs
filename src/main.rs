@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use tiny_skia::*;
 
 const X_RANGE: (f64, f64) = (-2.00, 0.47);
@@ -16,24 +17,27 @@ fn main() {
     let mut paint = Paint::default();
     let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
 
-    let mut x = 0.;
-    while (x as u32) < IMAGE_SIZE.0 {
-        let mut y = 0.;
-        while (y as u32) < IMAGE_SIZE.1 {
-            let rect = Rect::from_xywh(x, y, 1., 1.).expect("Couldn't create rect");
-
+    let x_range = 0..=IMAGE_SIZE.0;
+    let map = x_range.into_par_iter().map(|x| {
+        let y_range = 0..=IMAGE_SIZE.1;
+        y_range.into_par_iter().map(move |y| {
             //Get iteration count
             let iter = mandelbrot(x as f64, y as f64);
 
-            //Change color
-            paint.shader = Shader::SolidColor(iteration_to_color(iter));
+            iteration_to_color(iter)
+        })
+    });
 
-            //paint pixel
-            pixmap.fill_rect(rect, &paint, Transform::identity(), None);
-            y += 1.;
-        }
-        x += 1.;
-    }
+    /*
+    //Create rect
+    let rect = Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
+
+    //Change color
+    paint.shader = Shader::SolidColor(iteration_to_color(iter));
+
+    //paint pixel
+    pixmap.fill_rect(rect, &paint, Transform::identity(), None);
+    */
 
     pixmap.save_png("image.png").unwrap();
 }
