@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use tiny_skia::*;
 
 const X_RANGE: (f64, f64) = (-2.00, 0.47);
@@ -5,7 +6,7 @@ const X_OFF: f64 = (X_RANGE.0 + X_RANGE.1) / 2.;
 const Y_RANGE: (f64, f64) = (-1.12, 1.12);
 const Y_OFF: f64 = (Y_RANGE.0 + Y_RANGE.1) / 2.;
 
-const IMAGE_SIZE: (u32, u32) = (4000, 4000);
+const IMAGE_SIZE: (u32, u32) = (1000, 1000);
 const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
 const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
 
@@ -16,23 +17,37 @@ fn main() {
     let mut paint = Paint::default();
     let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
 
-    let mut x = 0.;
-    while (x as u32) < IMAGE_SIZE.0 {
-        let mut y = 0.;
-        while (y as u32) < IMAGE_SIZE.1 {
-            let rect = Rect::from_xywh(x, y, 1., 1.).expect("Couldn't create rect");
+    let x_range = 0..=IMAGE_SIZE.0;
+    let map = x_range
+        .into_par_iter()
+        .map(|x| {
+            let y_range = 0..=IMAGE_SIZE.1;
+            (
+                x,
+                y_range
+                    .into_par_iter()
+                    .map(move |y| {
+                        //Get iteration count
+                        let iter = mandelbrot(x as f64, y as f64);
 
-            //Get iteration count
-            let iter = mandelbrot(x as f64, y as f64);
+                        (y, iteration_to_color(iter))
+                    })
+                    .collect::<Vec<(u32, Color)>>(),
+            )
+        })
+        .collect::<Vec<(u32, Vec<(u32, Color)>)>>();
+
+    for (x, y_vec) in map {
+        for (y, color) in y_vec {
+            //Create rect
+            let rect = Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
 
             //Change color
-            paint.shader = Shader::SolidColor(iteration_to_color(iter));
+            paint.shader = Shader::SolidColor(color);
 
             //paint pixel
             pixmap.fill_rect(rect, &paint, Transform::identity(), None);
-            y += 1.;
         }
-        x += 1.;
     }
 
     pixmap.save_png("image.png").unwrap();

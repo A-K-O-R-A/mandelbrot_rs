@@ -7,4 +7,8 @@ edition = "2021"
 
 [dependencies]
 tiny-skia = "0.8.2"
-# num-complex = "0.4.2"
+rayon = "1.5.3"
+
+# For flamegraphs
+[profile.release]
+debug = true
