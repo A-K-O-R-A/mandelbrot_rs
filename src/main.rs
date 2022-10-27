@@ -6,7 +6,7 @@ const X_OFF: f64 = (X_RANGE.0 + X_RANGE.1) / 2.;
 const Y_RANGE: (f64, f64) = (-1.12, 1.12);
 const Y_OFF: f64 = (Y_RANGE.0 + Y_RANGE.1) / 2.;
 
-const IMAGE_SIZE: (u32, u32) = (4000, 4000);
+const IMAGE_SIZE: (u32, u32) = (1000, 1000);
 const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
 const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
 
