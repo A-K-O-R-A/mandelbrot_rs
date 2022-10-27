@@ -3,10 +3,12 @@ use tiny_skia::*;
 
 const X_RANGE: (f64, f64) = (-2.00, 0.47);
 const X_OFF: f64 = (X_RANGE.0 + X_RANGE.1) / 2.;
-const Y_RANGE: (f64, f64) = (-1.12, 1.12);
+//const Y_RANGE: (f64, f64) = (-1.12, 1.12);
+const Y_RANGE: (f64, f64) = (-1.12, 0.);
 const Y_OFF: f64 = (Y_RANGE.0 + Y_RANGE.1) / 2.;
 
-const IMAGE_SIZE: (u32, u32) = (2000, 2000);
+//const IMAGE_SIZE: (u32, u32) = (2000, 2000);
+const IMAGE_SIZE: (u32, u32) = (4000, 2000);
 const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
 const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
 
@@ -105,7 +107,7 @@ fn iteration_to_color(iteration: u64) -> Color {
 
     let iter_fact = iteration as f32 / MAX_ITERATION as f32;
 
-    blue.add(green.sub(blue).mult(iter_fact))
+    blue.add(green.sub(blue).mult(iter_fact * 2.))
 }
 
 ///Source: https://en.wikipedia.org/wiki/Mandelbrot_set
