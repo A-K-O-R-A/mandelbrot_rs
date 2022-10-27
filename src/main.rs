@@ -6,7 +6,7 @@ const X_OFF: f64 = (X_RANGE.0 + X_RANGE.1) / 2.;
 const Y_RANGE: (f64, f64) = (-1.12, 1.12);
 const Y_OFF: f64 = (Y_RANGE.0 + Y_RANGE.1) / 2.;
 
-const IMAGE_SIZE: (u32, u32) = (1000, 1000);
+const IMAGE_SIZE: (u32, u32) = (2000, 2000);
 const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
 const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
 
@@ -53,9 +53,59 @@ fn main() {
     pixmap.save_png("image.png").unwrap();
 }
 
+trait QwQ {
+    fn add(&self, b: Self) -> Self;
+    fn sub(&self, b: Self) -> Self;
+    fn mult(&self, p: f32) -> Self;
+}
+fn clamp(n: f32) -> f32 {
+    if n > 1. {
+        return 1.;
+    } else if n < 0. {
+        return clamp(-n);
+    }
+    n
+}
+
+impl QwQ for Color {
+    fn add(&self, b: Self) -> Self {
+        Color::from_rgba(
+            clamp(self.red() + b.red()),
+            clamp(self.green() + b.green()),
+            clamp(self.blue() + b.blue()),
+            1.,
+        )
+        .unwrap()
+    }
+
+    fn sub(&self, b: Self) -> Self {
+        Color::from_rgba(
+            clamp(self.red() - b.red()),
+            clamp(self.green() - b.green()),
+            clamp(self.blue() - b.blue()),
+            1.,
+        )
+        .unwrap()
+    }
+
+    fn mult(&self, p: f32) -> Self {
+        Color::from_rgba(
+            clamp(self.red() * p),
+            clamp(self.green() * p),
+            clamp(self.blue() * p),
+            1.,
+        )
+        .unwrap()
+    }
+}
+
 fn iteration_to_color(iteration: u64) -> Color {
+    let green = Color::from_rgba8(0, 255, 31, 255);
+    let blue = Color::from_rgba8(0, 3, 255, 255);
+
     let iter_fact = iteration as f32 / MAX_ITERATION as f32;
-    Color::from_rgba8(0, 0, (iter_fact * 255.) as u8, 255)
+
+    blue.add(green.sub(blue).mult(iter_fact))
 }
 
 ///Source: https://en.wikipedia.org/wiki/Mandelbrot_set
