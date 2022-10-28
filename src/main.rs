@@ -11,6 +11,9 @@ fn main() {
     let mut paint = Paint::default();
     let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
 
+    use std::time::Instant;
+    let now = Instant::now();
+
     let x_range = 0..=IMAGE_SIZE.0;
     let map = x_range
         .into_par_iter()
@@ -31,6 +34,11 @@ fn main() {
         })
         .collect::<Vec<(u32, Vec<(u32, Color)>)>>();
 
+    let elapsed = now.elapsed();
+    println!("Calculation took      {:.2?}", elapsed);
+
+    let now = Instant::now();
+
     for (x, y_vec) in map {
         for (y, color) in y_vec {
             //Create single pixel as rect
@@ -44,5 +52,12 @@ fn main() {
         }
     }
 
+    let elapsed = now.elapsed();
+    println!("Drawing took          {:.2?}", elapsed);
+
+    let now = Instant::now();
+
     pixmap.save_png("image.png").unwrap();
+    let elapsed = now.elapsed();
+    println!("Writing took          {:.2?}", elapsed);
 }
