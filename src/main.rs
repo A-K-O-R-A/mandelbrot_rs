@@ -12,7 +12,7 @@ const IMAGE_SIZE: (u32, u32) = (4000, 2000);
 const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
 const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
 
-const MAX_ITERATION: u64 = 1000;
+const MAX_ITERATION: u64 = 1_000;
 const RADIUS: f64 = 2.;
 
 fn main() {
@@ -101,13 +101,35 @@ impl QwQ for Color {
     }
 }
 
+#[allow(dead_code)]
+mod scale {
+    pub fn linear(iteration: u64) -> f32 {
+        iteration as f32 / super::MAX_ITERATION as f32
+    }
+
+    pub fn logarithmic(iteration: u64) -> f32 {
+        ((linear(iteration) * 100. + 1.).log(1000000.) * 299.) / 100.
+    }
+
+    pub fn exponential(iteration: u64) -> f32 {
+        -1. / (iteration as f32).powf(0.25) + 1.
+    }
+}
+
 fn iteration_to_color(iteration: u64) -> Color {
-    let green = Color::from_rgba8(0, 255, 31, 255);
-    let blue = Color::from_rgba8(0, 3, 255, 255);
+    let green = Color::from_rgba8(255, 0, 0, 255);
+    let blue = Color::from_rgba8(0, 0, 0, 255);
 
-    let iter_fact = iteration as f32 / MAX_ITERATION as f32;
+    //Linear scale
+    //let iter_fact = scale::linear(iteration);
 
-    blue.add(green.sub(blue).mult(iter_fact * 2.))
+    //Logarithmic scale
+    //let iter_fact = scale::logarithmic(iteration);
+
+    //Exponential scale
+    let iter_fact = scale::exponential(iteration);
+
+    blue.add(green.sub(blue).mult(iter_fact))
 }
 
 ///Source: https://en.wikipedia.org/wiki/Mandelbrot_set
