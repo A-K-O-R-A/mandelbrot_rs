@@ -4,9 +4,7 @@ use tiny_skia::*;
 mod color;
 mod sets;
 
-//const IMAGE_SIZE: (u32, u32) = (2000, 2000);
 const IMAGE_SIZE: (u32, u32) = (4000, 2000);
-
 const MAX_ITERATION: u64 = 1_000;
 
 fn main() {
