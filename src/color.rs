@@ -1,4 +1,3 @@
-use rayon::vec;
 use tiny_skia::*;
 
 ///Clamp a value to 1
