@@ -78,7 +78,7 @@ pub mod scale {
 
     ///Exponential scale, still needs some tuning
     pub fn exponential(iteration: u64) -> f32 {
-        -1. / (iteration as f32).powf(0.25) + 1.
+        -1. / (iteration as f32).powf(0.07) + 1.
     }
 }
 

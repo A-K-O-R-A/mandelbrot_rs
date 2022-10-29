@@ -4,9 +4,10 @@ use std::io::BufWriter;
 use std::path::Path;
 use std::time::Instant;
 
+use tiny_skia::*;
+
 use crate::color::*;
 use crate::IMAGE_SIZE;
-use tiny_skia::*;
 
 const DATA_SIZE: usize = (IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4) as usize;
 
@@ -146,9 +147,10 @@ pub mod png_crate {
 
     #[allow(dead_code)]
     pub fn to_binary(yx_map: &Vec<Vec<Color>>) -> Vec<u8> {
+        //Without multithreading
         let mut data: Vec<u8> = Vec::with_capacity(DATA_SIZE);
-
         //let yx_map = transpose::yx_map(yx_map);
+
         for x_vec in yx_map {
             for color in x_vec {
                 //Get bytes
@@ -157,6 +159,21 @@ pub mod png_crate {
                 data.append(&mut bytes);
             }
         }
+
+        /*
+        //With rayon parallel iterators
+        let data: Vec<u8> = yx_map
+            .par_iter()
+            .map(|x_vec| {
+                x_vec
+                    .par_iter()
+                    .map(|color| color.to_bytes())
+                    .flatten()
+                    .collect::<Vec<u8>>()
+            })
+            .flatten()
+            .collect();
+        */
 
         data[0..DATA_SIZE].to_vec()
     }

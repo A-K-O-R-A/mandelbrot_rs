@@ -8,7 +8,7 @@ mod color;
 mod data;
 mod sets;
 
-const IMAGE_SIZE: (u32, u32) = (16000, 8000);
+const IMAGE_SIZE: (u32, u32) = (4000, 2000);
 const MAX_ITERATION: u64 = 1_000;
 
 fn main() {
