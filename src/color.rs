@@ -1,12 +1,5 @@
 use tiny_skia::*;
 
-///Basic math operations
-pub trait Arithmetic {
-    fn add(&self, b: Self) -> Self;
-    fn sub(&self, b: Self) -> Self;
-    fn mult(&self, p: f32) -> Self;
-}
-
 ///Clamp a value to 1
 pub fn clamp(n: f32) -> f32 {
     if n > 1. {
@@ -17,6 +10,12 @@ pub fn clamp(n: f32) -> f32 {
     n
 }
 
+///Basic math operations
+pub trait Arithmetic {
+    fn add(&self, b: Self) -> Self;
+    fn sub(&self, b: Self) -> Self;
+    fn mult(&self, p: f32) -> Self;
+}
 impl Arithmetic for Color {
     fn add(&self, b: Self) -> Self {
         Color::from_rgba(
@@ -46,6 +45,22 @@ impl Arithmetic for Color {
             1.,
         )
         .unwrap()
+    }
+}
+
+pub trait ToBytes {
+    fn to_bytes(&self) -> [u8; 4];
+    fn to_vec(&self) -> Vec<u8>;
+}
+impl ToBytes for Color {
+    fn to_bytes(&self) -> [u8; 4] {
+        let cu8 = self.to_color_u8();
+        [cu8.red(), cu8.green(), cu8.blue(), cu8.alpha()]
+    }
+
+    fn to_vec(&self) -> Vec<u8> {
+        let cu8 = self.to_color_u8();
+        vec![cu8.red(), cu8.green(), cu8.blue(), cu8.alpha()]
     }
 }
 

@@ -2,15 +2,13 @@ use rayon::prelude::*;
 use tiny_skia::*;
 
 mod color;
+mod data;
 mod sets;
 
-const IMAGE_SIZE: (u32, u32) = (4000, 2000);
+const IMAGE_SIZE: (u32, u32) = (2000, 1000);
 const MAX_ITERATION: u64 = 1_000;
 
 fn main() {
-    let mut paint = Paint::default();
-    let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
-
     use std::time::Instant;
     let now = Instant::now();
 
@@ -39,25 +37,19 @@ fn main() {
 
     let now = Instant::now();
 
-    for (x, y_vec) in map {
-        for (y, color) in y_vec {
-            //Create single pixel as rect
-            let rect = Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
-
-            //Change color
-            paint.shader = Shader::SolidColor(color);
-
-            //paint pixel
-            pixmap.fill_rect(rect, &paint, Transform::identity(), None);
-        }
-    }
+    //let pixmap = data::skia::draw_pixmap(&map);
+    let bin = data::png_crate::to_binary(&map);
+    //let raster = data::png_pong_crate::to_raster(&map);
 
     let elapsed = now.elapsed();
     println!("Drawing took          {:.2?}", elapsed);
 
     let now = Instant::now();
 
-    pixmap.save_png("image.png").unwrap();
+    //data::skia::save_file(&pixmap);
+    data::png_crate::save_file(&bin[..]);
+    //data::png_pong_crate::save_file(raster);
+
     let elapsed = now.elapsed();
     println!("Writing took          {:.2?}", elapsed);
 }
