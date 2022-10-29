@@ -7,7 +7,7 @@ mod color;
 mod data;
 mod sets;
 
-pub const IMAGE_SIZE: (usize, usize) = (64000, 32000);
+pub const IMAGE_SIZE: (usize, usize) = (4000, 2000);
 pub const MAX_ITERATION: u64 = 1_000;
 
 pub type Color = [u8; 4];
