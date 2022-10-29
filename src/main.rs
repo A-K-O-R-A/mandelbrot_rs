@@ -12,15 +12,15 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let y_range = 0..=IMAGE_SIZE.1;
-    let yx_map = y_range
+    let x_range = 0..IMAGE_SIZE.0;
+    let xy_map = x_range
         .into_par_iter()
-        .map(|y| {
-            let x_range = 0..=IMAGE_SIZE.0;
+        .map(|x| {
+            let y_range = 0..IMAGE_SIZE.1;
 
-            x_range
+            y_range
                 .into_par_iter()
-                .map(move |x| {
+                .map(move |y| {
                     //Get iteration count
                     let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
 
@@ -35,9 +35,10 @@ fn main() {
 
     let now = Instant::now();
 
-    //let pixmap = data::skia::draw_pixmap(&map);
-    let bin = data::png_crate::to_binary(&yx_map);
-    //let raster = data::png_pong_crate::to_raster(&map);
+    let transposed = data::transpose::xy_map(&xy_map);
+    //let pixmap = data::skia::draw_pixmap(&xy_map);
+    let bin = data::png_crate::to_binary(&transposed);
+    //let raster = data::png_pong_crate::to_raster(&transposed);
 
     let elapsed = now.elapsed();
     println!("Drawing took          {:.2?}", elapsed);
