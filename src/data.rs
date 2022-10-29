@@ -7,20 +7,20 @@ use std::path::Path;
 //use crate::color::*;
 use crate::{Color, IMAGE_SIZE};
 
-const DATA_SIZE: usize = (IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4) as usize;
+const DATA_SIZE: usize = IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4;
 
 #[allow(dead_code)]
 pub mod transpose {
     use super::*;
 
     pub fn xy_map(xy_map: &Vec<Vec<Color>>) -> Vec<Vec<Color>> {
-        let mut yx_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.1 as usize);
+        let mut yx_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.1);
 
         let mut y = 0;
-        while y < IMAGE_SIZE.1 as usize {
+        while y < IMAGE_SIZE.1 {
             let mut x = 0;
-            let mut row = Vec::with_capacity(IMAGE_SIZE.0 as usize);
-            while x < IMAGE_SIZE.0 as usize {
+            let mut row = Vec::with_capacity(IMAGE_SIZE.0);
+            while x < IMAGE_SIZE.0 {
                 row.push(xy_map[x][y]);
                 x += 1;
             }
@@ -31,13 +31,13 @@ pub mod transpose {
     }
 
     pub fn yx_map(yx_map: &Vec<Vec<Color>>) -> Vec<Vec<Color>> {
-        let mut xy_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.0 as usize);
+        let mut xy_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.0);
 
         let mut x = 0;
-        while x < IMAGE_SIZE.0 as usize {
+        while x < IMAGE_SIZE.0 {
             let mut y = 0;
-            let mut column = Vec::with_capacity(IMAGE_SIZE.1 as usize);
-            while y < IMAGE_SIZE.1 as usize {
+            let mut column = Vec::with_capacity(IMAGE_SIZE.1);
+            while y < IMAGE_SIZE.1 {
                 column.push(yx_map[y][x]);
                 y += 1;
             }
@@ -71,7 +71,7 @@ pub mod skia {
                     Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
 
                 //Change color
-                paint.shader = Shader::SolidColor(yx_map[x as usize][y as usize]);
+                paint.shader = Shader::SolidColor(yx_map[x ][y ]);
 
                 //paint pixel
                 pixmap.fill_rect(rect, &paint, Transform::identity(), None);
@@ -137,7 +137,7 @@ pub mod png_crate {
         let file = File::create(path).unwrap();
         let ref mut w = BufWriter::new(file);
 
-        let mut encoder = png::Encoder::new(w, IMAGE_SIZE.0, IMAGE_SIZE.1); // Width is 2 pixels and height is 1.
+        let mut encoder = png::Encoder::new(w, IMAGE_SIZE.0 as u32, IMAGE_SIZE.1 as u32); // Width is 2 pixels and height is 1.
         encoder.set_color(png::ColorType::Rgba);
         encoder.set_depth(png::BitDepth::Eight);
 
