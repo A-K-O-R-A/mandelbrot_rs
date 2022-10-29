@@ -8,7 +8,7 @@ mod color;
 mod data;
 mod sets;
 
-const IMAGE_SIZE: (u32, u32) = (32000, 16000);
+const IMAGE_SIZE: (u32, u32) = (16000, 8000);
 const MAX_ITERATION: u64 = 1_000;
 
 fn main() {
@@ -40,17 +40,20 @@ fn main() {
 
     let elapsed = now.elapsed();
     println!("Calculation took      {:.2?}", elapsed);
-
     let now = Instant::now();
 
     let transposed = data::transpose::xy_map(&xy_map);
+
+    let elapsed = now.elapsed();
+    println!("Transpose took        {:.2?}", elapsed);
+    let now = Instant::now();
+
     //let pixmap = data::skia::draw_pixmap(&xy_map);
     let bin = data::png_crate::to_binary(&transposed);
     //let raster = data::png_pong_crate::to_raster(&transposed);
 
     let elapsed = now.elapsed();
-    println!("Drawing took          {:.2?}", elapsed);
-
+    println!("Drawing/Converting    {:.2?}", elapsed);
     let now = Instant::now();
 
     //data::skia::save_file(&pixmap);
@@ -58,5 +61,5 @@ fn main() {
     //data::png_pong_crate::save_file(raster);
 
     let elapsed = now.elapsed();
-    println!("Writing took          {:.2?}", elapsed);
+    println!("Encoding/Writing      {:.2?}", elapsed);
 }
