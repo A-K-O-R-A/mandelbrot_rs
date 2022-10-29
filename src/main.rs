@@ -2,21 +2,22 @@ use pbr::ProgressBar;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use tiny_skia::*;
 
 mod color;
 mod data;
 mod sets;
 
-const IMAGE_SIZE: (u32, u32) = (4000, 2000);
-const MAX_ITERATION: u64 = 1_000;
+pub const IMAGE_SIZE: (u32, u32) = (8000, 4000);
+pub const MAX_ITERATION: u64 = 1_000;
+
+pub type Color = [u8; 4];
 
 fn main() {
     let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.0) as u64)));
     let now = Instant::now();
 
     let x_range = 0..IMAGE_SIZE.0;
-    let xy_map = x_range
+    let xy_map: Vec<Vec<Color>> = x_range
         .into_par_iter()
         .map(move |x| {
             let y_range = 0..IMAGE_SIZE.1;
@@ -29,14 +30,14 @@ fn main() {
 
                     color::from_iterations(iter)
                 })
-                .collect::<Vec<Color>>();
+                .collect();
 
             //Reduces speed a bit
             pb.lock().unwrap().inc();
 
             colors
         })
-        .collect::<Vec<Vec<Color>>>();
+        .collect();
 
     let elapsed = now.elapsed();
     println!("Calculation took      {:.2?}", elapsed);

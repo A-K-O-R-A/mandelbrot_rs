@@ -2,12 +2,10 @@
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
-use std::time::Instant;
+//use std::time::Instant;
 
-use tiny_skia::*;
-
-use crate::color::*;
-use crate::IMAGE_SIZE;
+//use crate::color::*;
+use crate::{Color, IMAGE_SIZE};
 
 const DATA_SIZE: usize = (IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4) as usize;
 
@@ -50,9 +48,12 @@ pub mod transpose {
     }
 }
 
+/*
+
 #[allow(dead_code)]
 pub mod skia {
     use super::*;
+    use tiny_skia::{Paint, Pixmap, Rect, Shader, Transform};
 
     pub fn save_file(pixmap: &Pixmap) {
         let _ = &pixmap.save_png("skia.png").unwrap();
@@ -125,6 +126,8 @@ pub mod png_pong_crate {
         raster
     }
 }
+
+*/
 
 #[allow(dead_code)]
 pub mod png_crate {
