@@ -775,6 +775,7 @@ dependencies = [
  "core",
  "eframe",
  "egui",
+ "rayon",
 ]
 
 [[package]]
