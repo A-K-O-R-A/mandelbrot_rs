@@ -2,25 +2,25 @@
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
+//use std::time::Instant;
 
-use crate::color::*;
-use crate::IMAGE_SIZE;
-use tiny_skia::*;
+//use crate::color::*;
+use crate::{Color, IMAGE_SIZE};
 
-const DATA_SIZE: usize = (IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4) as usize;
+const DATA_SIZE: usize = IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4;
 
 #[allow(dead_code)]
 pub mod transpose {
     use super::*;
 
     pub fn xy_map(xy_map: &Vec<Vec<Color>>) -> Vec<Vec<Color>> {
-        let mut yx_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.1 as usize);
+        let mut yx_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.1);
 
         let mut y = 0;
-        while y < IMAGE_SIZE.1 as usize {
+        while y < IMAGE_SIZE.1 {
             let mut x = 0;
-            let mut row = Vec::with_capacity(IMAGE_SIZE.0 as usize);
-            while x < IMAGE_SIZE.0 as usize {
+            let mut row = Vec::with_capacity(IMAGE_SIZE.0);
+            while x < IMAGE_SIZE.0 {
                 row.push(xy_map[x][y]);
                 x += 1;
             }
@@ -31,13 +31,13 @@ pub mod transpose {
     }
 
     pub fn yx_map(yx_map: &Vec<Vec<Color>>) -> Vec<Vec<Color>> {
-        let mut xy_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.0 as usize);
+        let mut xy_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.0);
 
         let mut x = 0;
-        while x < IMAGE_SIZE.0 as usize {
+        while x < IMAGE_SIZE.0 {
             let mut y = 0;
-            let mut column = Vec::with_capacity(IMAGE_SIZE.1 as usize);
-            while y < IMAGE_SIZE.1 as usize {
+            let mut column = Vec::with_capacity(IMAGE_SIZE.1);
+            while y < IMAGE_SIZE.1 {
                 column.push(yx_map[y][x]);
                 y += 1;
             }
@@ -48,9 +48,12 @@ pub mod transpose {
     }
 }
 
+/*
+
 #[allow(dead_code)]
 pub mod skia {
     use super::*;
+    use tiny_skia::{Paint, Pixmap, Rect, Shader, Transform};
 
     pub fn save_file(pixmap: &Pixmap) {
         let _ = &pixmap.save_png("skia.png").unwrap();
@@ -68,7 +71,7 @@ pub mod skia {
                     Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
 
                 //Change color
-                paint.shader = Shader::SolidColor(yx_map[x as usize][y as usize]);
+                paint.shader = Shader::SolidColor(yx_map[x ][y ]);
 
                 //paint pixel
                 pixmap.fill_rect(rect, &paint, Transform::identity(), None);
@@ -87,9 +90,16 @@ pub mod png_pong_crate {
 
     pub fn save_file(raster: PngRaster) {
         let mut out_data = Vec::new();
+
+        let now = Instant::now();
+
         let mut encoder = png_pong::Encoder::new(&mut out_data).into_step_enc();
         let step = png_pong::Step { raster, delay: 0 };
         encoder.encode(&step).expect("Failed to add frame");
+
+        let elapsed = now.elapsed();
+        println!("Encoding took         {:.2?}", elapsed);
+
         std::fs::write("png_pong.png", out_data).expect("Failed to save image");
     }
 
@@ -117,6 +127,8 @@ pub mod png_pong_crate {
     }
 }
 
+*/
+
 #[allow(dead_code)]
 pub mod png_crate {
     use super::*;
@@ -125,7 +137,7 @@ pub mod png_crate {
         let file = File::create(path).unwrap();
         let ref mut w = BufWriter::new(file);
 
-        let mut encoder = png::Encoder::new(w, IMAGE_SIZE.0, IMAGE_SIZE.1); // Width is 2 pixels and height is 1.
+        let mut encoder = png::Encoder::new(w, IMAGE_SIZE.0 as u32, IMAGE_SIZE.1 as u32); // Width is 2 pixels and height is 1.
         encoder.set_color(png::ColorType::Rgba);
         encoder.set_depth(png::BitDepth::Eight);
 
@@ -138,9 +150,10 @@ pub mod png_crate {
 
     #[allow(dead_code)]
     pub fn to_binary(yx_map: &Vec<Vec<Color>>) -> Vec<u8> {
+        //Without multithreading
         let mut data: Vec<u8> = Vec::with_capacity(DATA_SIZE);
-
         //let yx_map = transpose::yx_map(yx_map);
+
         for x_vec in yx_map {
             for color in x_vec {
                 //Get bytes
@@ -149,6 +162,21 @@ pub mod png_crate {
                 data.append(&mut bytes);
             }
         }
+
+        /*
+        //With rayon parallel iterators
+        let data: Vec<u8> = yx_map
+            .par_iter()
+            .map(|x_vec| {
+                x_vec
+                    .par_iter()
+                    .map(|color| color.to_bytes())
+                    .flatten()
+                    .collect::<Vec<u8>>()
+            })
+            .flatten()
+            .collect();
+        */
 
         data[0..DATA_SIZE].to_vec()
     }
