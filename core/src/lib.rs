@@ -1,1 +1,4 @@
-pub const HELLO_WORLD: &'static str = "AAA";
+pub mod color;
+mod sets;
+
+pub use sets::{Dim, Mandelbrot};

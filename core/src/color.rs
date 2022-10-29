@@ -1,12 +1,10 @@
 use palette::{rgb::Rgba, Hsv, IntoColor, Pixel};
 
-use crate::Color;
-
 #[allow(dead_code)]
 pub mod scale {
     ///Linear scale, only works with a specific amount of iterations
     pub fn linear(iteration: u64) -> f32 {
-        iteration as f32 / crate::MAX_ITERATION as f32
+        iteration as f32 / 1_000 as f32
     }
 
     ///Logarithmic scale, still needs some tuning
@@ -20,7 +18,7 @@ pub mod scale {
     }
 }
 
-pub fn from_iterations(iteration: u64, used_scale: fn(u64) -> f32) -> Color {
+pub fn from_iterations(iteration: u64, used_scale: fn(u64) -> f32) -> [u8; 4] {
     //Exponential scale
     let iter_fact = used_scale(iteration);
 

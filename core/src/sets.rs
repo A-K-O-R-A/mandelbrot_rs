@@ -1,53 +1,11 @@
 use rayon::prelude::*;
-
-pub mod mandelbrot {
-    use crate::{IMAGE_SIZE, MAX_ITERATION};
-
-    const RADIUS: f64 = 2.;
-
-    const X_RANGE: (f64, f64) = (-2.00, 0.47);
-    //const Y_RANGE: (f64, f64) = (-1.12, 1.12);
-    const Y_RANGE: (f64, f64) = (-1.12, 0.);
-
-    const X_OFF: f64 = (X_RANGE.0 + X_RANGE.1) / 2.;
-    const Y_OFF: f64 = (Y_RANGE.0 + Y_RANGE.1) / 2.;
-
-    const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
-    const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
-
-    ///Source: https://en.wikipedia.org/wiki/Mandelbrot_set
-    pub fn get_pixel(px: f64, py: f64) -> u64 {
-        let x0 = px - (IMAGE_SIZE.0 / 2) as f64;
-        let y0 = py - (IMAGE_SIZE.1 / 2) as f64;
-
-        let x0 = (x0 / X_SCALE) + X_OFF;
-        let y0 = (y0 / Y_SCALE) + Y_OFF;
-
-        let mut x = 0.0;
-        let mut y = 0.0;
-        let mut iteration = 0_u64;
-
-        //println!("{x} : {y}");
-        while ((x * x + y * y) <= RADIUS * RADIUS) && (iteration < MAX_ITERATION) {
-            let xtemp = x * x - y * y + x0;
-            y = 2. * x * y + y0;
-            x = xtemp;
-            iteration += 1;
-        }
-
-        //color := palette[iteration]
-        //plot(Px, Py, color)
-
-        iteration
-    }
-}
-
 ///2 Dimensions
 pub struct Dim<T> {
     x: T,
     y: T,
 }
 impl<T> Dim<T> {
+    #[allow(dead_code)]
     fn new(x: T, y: T) -> Self {
         Self { x, y }
     }
@@ -66,7 +24,25 @@ pub struct Mandelbrot {
 #[allow(dead_code)]
 
 impl Mandelbrot {
-    fn from_range(image_size: Dim<usize>, x_range: (f64, f64), y_range: (f64, f64)) -> Self {
+    pub fn default(width: usize, height: usize) -> Self {
+        let mut inst = Mandelbrot {
+            image_size: Dim {
+                x: width,
+                y: height,
+            },
+            x_range: (-2.00, 0.47),
+            y_range: (-1.12, 0.),
+            offset: Dim { x: 0., y: 0. },
+            scale: Dim { x: 0., y: 0. },
+            radius: 2.,
+            max_iterations: 1_000,
+        };
+        inst.calculate_offset();
+        inst.calculate_scale();
+
+        inst
+    }
+    pub fn from_range(image_size: Dim<usize>, x_range: (f64, f64), y_range: (f64, f64)) -> Self {
         let mut inst = Mandelbrot {
             image_size,
             x_range,
@@ -82,12 +58,12 @@ impl Mandelbrot {
         inst
     }
 
-    fn radius(mut self, r: f64) -> Self {
+    pub fn radius(mut self, r: f64) -> Self {
         self.radius = r;
         self
     }
 
-    fn max_iterations(mut self, n: u64) -> Self {
+    pub fn max_iterations(mut self, n: u64) -> Self {
         self.max_iterations = n;
         self
     }
@@ -144,7 +120,7 @@ impl Mandelbrot {
     }
 
     ///Get a 2D Vector of colors for every single pixel on the screen
-    fn get_color_map(&self) -> Vec<Vec<crate::Color>> {
+    pub fn get_color_map(&self) -> Vec<Vec<[u8; 4]>> {
         let x_range = 0..self.image_size.x;
         x_range
             .into_par_iter()

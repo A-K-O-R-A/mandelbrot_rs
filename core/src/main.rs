@@ -1,5 +1,4 @@
 use pbr::ProgressBar;
-use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -13,31 +12,11 @@ pub const MAX_ITERATION: u64 = 1_000;
 pub type Color = [u8; 4];
 
 fn main() {
-    let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.0) as u64)));
+    let _pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.0) as u64)));
     let now = Instant::now();
 
-    let x_range = 0..IMAGE_SIZE.0;
-    let xy_map: Vec<Vec<Color>> = x_range
-        .into_par_iter()
-        .map(move |x| {
-            let y_range = 0..IMAGE_SIZE.1;
-
-            let colors = y_range
-                .into_par_iter()
-                .map(|y| {
-                    //Get iteration count
-                    let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
-
-                    color::from_iterations(iter, color::scale::exponential)
-                })
-                .collect();
-
-            //Reduces speed a bit
-            pb.lock().unwrap().inc();
-
-            colors
-        })
-        .collect();
+    let mandel = sets::Mandelbrot::default(IMAGE_SIZE.0, IMAGE_SIZE.1);
+    let xy_map = mandel.get_color_map();
 
     let elapsed = now.elapsed();
     println!("Calculation took      {:.2?}", elapsed);
