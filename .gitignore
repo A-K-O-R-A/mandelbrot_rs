@@ -5,5 +5,5 @@ flamegraph.svg
 
 # Renderd images during development
 png_crate.png
-png_png.png
+png_pong.png
 skia.png

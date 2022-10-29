@@ -8,7 +8,7 @@ mod color;
 mod data;
 mod sets;
 
-const IMAGE_SIZE: (u32, u32) = (8000, 4000);
+const IMAGE_SIZE: (u32, u32) = (32000, 16000);
 const MAX_ITERATION: u64 = 1_000;
 
 fn main() {
@@ -21,10 +21,7 @@ fn main() {
         .map(move |x| {
             let y_range = 0..IMAGE_SIZE.1;
 
-            //Reduces speed a bit
-            pb.lock().unwrap().inc();
-
-            y_range
+            let colors = y_range
                 .into_par_iter()
                 .map(|y| {
                     //Get iteration count
@@ -32,7 +29,12 @@ fn main() {
 
                     color::from_iterations(iter)
                 })
-                .collect::<Vec<Color>>()
+                .collect::<Vec<Color>>();
+
+            //Reduces speed a bit
+            pb.lock().unwrap().inc();
+
+            colors
         })
         .collect::<Vec<Vec<Color>>>();
 
