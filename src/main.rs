@@ -37,18 +37,18 @@ fn main() {
 
     let now = Instant::now();
 
-    let pixmap = data::skia::draw_pixmap(&map);
+    //let pixmap = data::skia::draw_pixmap(&map);
     let bin = data::png_crate::to_binary(&map);
-    let raster = data::png_pong_crate::to_raster(&map);
+    //let raster = data::png_pong_crate::to_raster(&map);
 
     let elapsed = now.elapsed();
     println!("Drawing took          {:.2?}", elapsed);
 
     let now = Instant::now();
 
-    data::skia::save_file(&pixmap);
+    //data::skia::save_file(&pixmap);
     data::png_crate::save_file(&bin[..]);
-    data::png_pong_crate::save_file(raster);
+    //data::png_pong_crate::save_file(raster);
 
     let elapsed = now.elapsed();
     println!("Writing took          {:.2?}", elapsed);
