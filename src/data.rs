@@ -2,6 +2,7 @@
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
+use std::time::Instant;
 
 use crate::color::*;
 use crate::IMAGE_SIZE;
@@ -87,9 +88,16 @@ pub mod png_pong_crate {
 
     pub fn save_file(raster: PngRaster) {
         let mut out_data = Vec::new();
+
+        let now = Instant::now();
+
         let mut encoder = png_pong::Encoder::new(&mut out_data).into_step_enc();
         let step = png_pong::Step { raster, delay: 0 };
         encoder.encode(&step).expect("Failed to add frame");
+
+        let elapsed = now.elapsed();
+        println!("Encoding took         {:.2?}", elapsed);
+
         std::fs::write("png_pong.png", out_data).expect("Failed to save image");
     }
 
