@@ -8,28 +8,53 @@ use crate::IMAGE_SIZE;
 use tiny_skia::*;
 
 const DATA_SIZE: usize = (IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4) as usize;
-//type BytePNG = [u8; DATA_SIZE];
+
+pub fn transpose_map(xy_map: &Vec<(u32, Vec<(u32, Color)>)>) -> Vec<Vec<Color>> {
+    let mut yx_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.1 as usize);
+
+    let mut y = 0;
+    while y < IMAGE_SIZE.1 as usize {
+        let mut x = 0;
+        let mut vec = Vec::with_capacity(IMAGE_SIZE.0 as usize);
+        while x < IMAGE_SIZE.0 as usize {
+            vec.push(xy_map[x].1[y].1);
+            x += 1;
+        }
+        yx_map.push(vec);
+        y += 1;
+    }
+    yx_map
+}
 
 #[allow(dead_code)]
-pub fn draw_pixmap(map: Vec<(u32, Vec<(u32, Color)>)>) -> Pixmap {
-    let mut paint = Paint::default();
-    let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
-    //let pixmap = Pixmap::from_vec(&mut data).unwrap();
+pub mod skia {
+    use super::*;
 
-    for (x, y_vec) in map {
-        for (y, color) in y_vec {
-            //Create single pixel as rect
-            let rect = Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
-
-            //Change color
-            paint.shader = Shader::SolidColor(color);
-
-            //paint pixel
-            pixmap.fill_rect(rect, &paint, Transform::identity(), None);
-        }
+    pub fn save_file(pixmap: &Pixmap) {
+        let _ = &pixmap.save_png("skia.png").unwrap();
     }
 
-    pixmap
+    pub fn draw_pixmap(map: &Vec<(u32, Vec<(u32, Color)>)>) -> Pixmap {
+        let mut paint = Paint::default();
+        let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
+        //let pixmap = Pixmap::from_vec(&mut data).unwrap();
+
+        for (x, y_vec) in map {
+            for (y, color) in y_vec {
+                //Create single pixel as rect
+                let rect =
+                    Rect::from_xywh(*x as f32, *y as f32, 1., 1.).expect("Couldn't create rect");
+
+                //Change color
+                paint.shader = Shader::SolidColor(*color);
+
+                //paint pixel
+                pixmap.fill_rect(rect, &paint, Transform::identity(), None);
+            }
+        }
+
+        pixmap
+    }
 }
 
 #[allow(dead_code)]
@@ -38,46 +63,23 @@ pub mod png_pong_crate {
 
     use super::*;
 
-    pub fn test() {
-        let mut out_data = Vec::new();
-        let mut encoder = png_pong::Encoder::new(&mut out_data).into_step_enc();
-
-        let raster = png_pong::PngRaster::Rgba8(pix::Raster::with_pixels(
-            IMAGE_SIZE.0,
-            IMAGE_SIZE.1,
-            &[pix::rgb::SRgba8::new(255, 0, 0, 255)][..],
-        ));
-
-        let step = png_pong::Step { raster, delay: 0 };
-        encoder.encode(&step).expect("Failed to add frame");
-        std::fs::write("test.png", out_data).expect("Failed to save image");
-    }
-
     pub fn save_file(raster: PngRaster) {
         let mut out_data = Vec::new();
         let mut encoder = png_pong::Encoder::new(&mut out_data).into_step_enc();
         let step = png_pong::Step { raster, delay: 0 };
         encoder.encode(&step).expect("Failed to add frame");
-        std::fs::write("graphic.png", out_data).expect("Failed to save image");
+        std::fs::write("png_pong.png", out_data).expect("Failed to save image");
     }
 
-    #[allow(dead_code)]
-    pub fn to_raster(xy_map: Vec<(u32, Vec<(u32, Color)>)>) -> PngRaster {
+    pub fn to_raster(xy_map: &Vec<(u32, Vec<(u32, Color)>)>) -> PngRaster {
         let mut pixels = Vec::with_capacity(DATA_SIZE / 4);
+        let yx_map = transpose_map(xy_map);
 
-        println!("{}", DATA_SIZE / 4);
-        for (x, y_vec) in xy_map {
-            for (y, color) in y_vec {
+        for x_vec in yx_map {
+            for color in x_vec {
                 //Get bytes
                 let bytes = color.to_bytes();
                 let srgba = pix::rgb::SRgba8::new(bytes[0], bytes[1], bytes[2], bytes[3]);
-
-                let i = x * y * 4;
-
-                if i >= DATA_SIZE as u32 {
-                    println!("{x}:{y} - {i}");
-                    continue;
-                }
 
                 pixels.push(srgba);
             }
@@ -96,8 +98,8 @@ pub mod png_pong_crate {
 #[allow(dead_code)]
 pub mod png_crate {
     use super::*;
-    pub fn save_file(data: &[u8; DATA_SIZE]) {
-        let path = Path::new(r"./image.png");
+    pub fn save_file(data: &[u8]) {
+        let path = Path::new(r"./png_crate.png");
         let file = File::create(path).unwrap();
         let ref mut w = BufWriter::new(file);
 
@@ -113,32 +115,18 @@ pub mod png_crate {
     }
 
     #[allow(dead_code)]
-    pub fn to_binary(map: Vec<(u32, Vec<(u32, Color)>)>) -> [u8; DATA_SIZE] {
-        let mut data: [u8; DATA_SIZE] = [0; DATA_SIZE];
+    pub fn to_binary(xy_map: &Vec<(u32, Vec<(u32, Color)>)>) -> Vec<u8> {
+        let mut data: Vec<u8> = Vec::with_capacity(DATA_SIZE);
 
-        for (x, y_vec) in map {
-            for (y, color) in y_vec {
+        let yx_map = transpose_map(xy_map);
+        for x_vec in yx_map {
+            for color in x_vec {
                 //Get bytes
-                let bytes = color.to_bytes();
-                //println!("{x}:{y}");
+                let mut bytes = color.to_vec();
 
-                let i = x * y * 4;
-
-                if i >= DATA_SIZE as u32 {
-                    println!("{x}:{y} - {i}");
-                    continue;
-                }
-
-                data[(i) as usize] = bytes[0];
-                data[(i + 1) as usize] = bytes[1];
-                data[(i + 2) as usize] = bytes[2];
-                data[(i + 3) as usize] = bytes[3];
-
-                //data.append(&mut bytes);
+                data.append(&mut bytes);
             }
         }
-
-        println!("Actual data size {}", data.len());
 
         data
     }
