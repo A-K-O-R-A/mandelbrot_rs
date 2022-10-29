@@ -1,4 +1,4 @@
-/target
+**/target
 perf.data
 flam
 flamegraph.svg
@@ -7,3 +7,7 @@ flamegraph.svg
 png_crate.png
 png_pong.png
 skia.png
+
+# Added by cargo
+
+/target
