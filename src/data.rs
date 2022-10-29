@@ -9,6 +9,7 @@ use tiny_skia::*;
 
 const DATA_SIZE: usize = (IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4) as usize;
 
+#[allow(dead_code)]
 pub fn transpose_map(xy_map: &Vec<Vec<Color>>) -> Vec<Vec<Color>> {
     let mut yx_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.1 as usize);
 
@@ -118,7 +119,6 @@ pub mod png_crate {
     pub fn to_binary(yx_map: &Vec<Vec<Color>>) -> Vec<u8> {
         let mut data: Vec<u8> = Vec::with_capacity(DATA_SIZE);
 
-        //let yx_map = transpose_map(xy_map);
         for x_vec in yx_map {
             for color in x_vec {
                 //Get bytes
@@ -128,6 +128,6 @@ pub mod png_crate {
             }
         }
 
-        data
+        data[0..DATA_SIZE].to_vec()
     }
 }
