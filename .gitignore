@@ -2,3 +2,8 @@
 perf.data
 flam
 flamegraph.svg
+
+# Renderd images during development
+png_crate.png
+png_png.png
+skia.png

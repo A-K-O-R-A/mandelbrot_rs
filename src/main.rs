@@ -1,26 +1,32 @@
+use pbr::ProgressBar;
 use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use tiny_skia::*;
 
 mod color;
 mod data;
 mod sets;
 
-const IMAGE_SIZE: (u32, u32) = (2000, 1000);
+const IMAGE_SIZE: (u32, u32) = (8000, 4000);
 const MAX_ITERATION: u64 = 1_000;
 
 fn main() {
-    use std::time::Instant;
+    let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.0) as u64)));
     let now = Instant::now();
 
     let x_range = 0..IMAGE_SIZE.0;
     let xy_map = x_range
         .into_par_iter()
-        .map(|x| {
+        .map(move |x| {
             let y_range = 0..IMAGE_SIZE.1;
+
+            //Reduces speed a bit
+            pb.lock().unwrap().inc();
 
             y_range
                 .into_par_iter()
-                .map(move |y| {
+                .map(|y| {
                     //Get iteration count
                     let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
 
