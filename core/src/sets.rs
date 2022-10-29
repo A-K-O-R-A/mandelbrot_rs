@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 pub mod mandelbrot {
     use crate::{IMAGE_SIZE, MAX_ITERATION};
 
@@ -50,18 +52,46 @@ impl<T> Dim<T> {
         Self { x, y }
     }
 }
+
+use crate::color;
 pub struct Mandelbrot {
     pub image_size: Dim<usize>,
-    x_range: (f64, f64),
-    y_range: (f64, f64),
+    pub x_range: (f64, f64),
+    pub y_range: (f64, f64),
     offset: Dim<f64>,
     scale: Dim<f64>,
-    radius: f64,
-    max_iterations: u64,
+    pub radius: f64,
+    pub max_iterations: u64,
 }
 #[allow(dead_code)]
 
 impl Mandelbrot {
+    fn from_range(image_size: Dim<usize>, x_range: (f64, f64), y_range: (f64, f64)) -> Self {
+        let mut inst = Mandelbrot {
+            image_size,
+            x_range,
+            y_range,
+            offset: Dim { x: 0., y: 0. },
+            scale: Dim { x: 0., y: 0. },
+            radius: 2.,
+            max_iterations: 1_000,
+        };
+        inst.calculate_offset();
+        inst.calculate_scale();
+
+        inst
+    }
+
+    fn radius(mut self, r: f64) -> Self {
+        self.radius = r;
+        self
+    }
+
+    fn max_iterations(mut self, n: u64) -> Self {
+        self.max_iterations = n;
+        self
+    }
+
     fn calculate_offset(&mut self) {
         let x_offset = (self.x_range.0 + self.x_range.1) / 2.;
         let y_offset = (self.y_range.0 + self.y_range.1) / 2.;
@@ -91,6 +121,7 @@ impl Mandelbrot {
         self.calculate_scale();
     }
 
+    ///Get value of the mandelbrot set according to a pixel on the screen
     pub fn get_pixel(&self, px: f64, py: f64) -> u64 {
         let x0 = px - (self.image_size.x / 2) as f64;
         let y0 = py - (self.image_size.y / 2) as f64;
@@ -110,5 +141,25 @@ impl Mandelbrot {
         }
 
         iteration
+    }
+
+    ///Get a 2D Vector of colors for every single pixel on the screen
+    fn get_color_map(&self) -> Vec<Vec<crate::Color>> {
+        let x_range = 0..self.image_size.x;
+        x_range
+            .into_par_iter()
+            .map(|x| {
+                let y_range = 0..self.image_size.y;
+                y_range
+                    .into_par_iter()
+                    .map(|y| {
+                        //Get iteration count
+                        let iter = self.get_pixel(x as f64, y as f64);
+
+                        color::from_iterations(iter, color::scale::exponential)
+                    })
+                    .collect()
+            })
+            .collect()
     }
 }

@@ -20,9 +20,9 @@ pub mod scale {
     }
 }
 
-pub fn from_iterations(iteration: u64) -> Color {
+pub fn from_iterations(iteration: u64, used_scale: fn(u64) -> f32) -> Color {
     //Exponential scale
-    let iter_fact = scale::exponential(iteration);
+    let iter_fact = used_scale(iteration);
 
     //let hsv_c = Hsv::new(iter_fact * 360., 1., 1.);
     let hsv_c = Hsv::new(iter_fact * 300. + 20., 1., 1.);

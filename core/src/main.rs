@@ -28,7 +28,7 @@ fn main() {
                     //Get iteration count
                     let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
 
-                    color::from_iterations(iter)
+                    color::from_iterations(iter, color::scale::exponential)
                 })
                 .collect();
 
