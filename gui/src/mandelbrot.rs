@@ -133,12 +133,64 @@ impl Mandelbrot {
         self.calculate_scale();
     }
     pub fn zoom(&mut self, delta: f32, pos: Pos2) {
-        let delta = delta as f64;
+        //println!("=====================================");
+        //println!("DELTA  {delta}");
+        //println!("ORANGE x:{:?}, y:{:?}", self.x_range, self.y_range);
 
-        let x_range = (self.x_range.0 * delta, self.x_range.1 * delta);
-        let y_range = (self.y_range.0 * delta, self.y_range.1 * delta);
+        //Relative position of the curosr, from 0-1
+        let rel_x = pos.x / (self.image_size.x as f32);
+        let rel_y = pos.y / (self.image_size.y as f32);
+        //println!("REL    x:{:?}, y:{:?}", rel_x, rel_y);
+
+        //New image are, relative values from 0-1
+        let cutout = Rect::from_two_pos(
+            Pos2 {
+                x: rel_x - delta / 2.,
+                y: rel_y - delta / 2.,
+            },
+            Pos2 {
+                x: rel_x + delta / 2.,
+                y: rel_y + delta / 2.,
+            },
+        );
+        //println!("CUTOUT {:?}", cutout);
+
+        //let delta = delta as f64;
+        let (x_range, y_range) = self.cutout_to_range(cutout);
+
+        //println!("NRANGE x:{:?}, y:{:?}", x_range, y_range);
+        //let x_range = (self.x_range.0 * delta, self.x_range.1 * delta);
+        //let y_range = (self.y_range.0 * delta, self.y_range.1 * delta);
+
         self.change_range(x_range, y_range);
     }
+    pub fn cutout_to_range(&self, rect: Rect) -> ((f64, f64), (f64, f64)) {
+        let (x_min, x_max) = self.x_range;
+        let (y_min, y_max) = self.y_range;
+
+        //Translate to possititve only
+        let x_trans = if x_min > 0. { x_min } else { -x_min };
+        let y_trans = if y_min > 0. { y_min } else { -y_min };
+
+        let _t_x_min = 0;
+        let t_x_max = x_max + x_trans;
+
+        let _t_y_min = 0;
+        let t_y_max = y_max + y_trans;
+
+        let new_t_x_min = t_x_max * (rect.left() as f64);
+        let new_t_x_max = t_x_max * (rect.right() as f64);
+
+        //Switch bottom anmd top bcs weird coordinatze system from library
+        let new_t_y_min = dbg!(t_y_max * (rect.top() as f64));
+        let new_t_y_max = dbg!(t_y_max * (rect.bottom() as f64));
+
+        let new_x_range = (new_t_x_min - x_trans, new_t_x_max - x_trans);
+        let new_y_range = (new_t_y_min - y_trans, new_t_y_max - y_trans);
+
+        (new_x_range, new_y_range)
+    }
+
     ///Get value of the mandelbrot set according to a pixel on the screen
     pub fn get_pixel(&self, px: f64, py: f64) -> u64 {
         let x0 = px - (self.image_size.x / 2) as f64;
@@ -313,6 +365,10 @@ impl Mandelbrot {
         ui.add(Slider::new(&mut self.max_iterations, 1..=40_000).text("Max iterations"));
         if ui.button("Reset zoom").clicked() {
             self.change_range((-2.00, 0.47), (-1.12, 0.));
+            self.recache();
+        }
+
+        if ui.button("Force recache").clicked() {
             self.recache();
         }
         //egui::reset_button(ui, self);
