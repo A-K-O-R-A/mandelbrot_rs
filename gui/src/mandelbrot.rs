@@ -132,7 +132,13 @@ impl Mandelbrot {
         self.calculate_offset();
         self.calculate_scale();
     }
+    pub fn zoom(&mut self, delta: f32) {
+        let delta = delta as f64;
 
+        let x_range = (self.x_range.0 * delta, self.x_range.1 * delta);
+        let y_range = (self.y_range.0 * delta, self.y_range.1 * delta);
+        self.change_range(x_range, y_range);
+    }
     ///Get value of the mandelbrot set according to a pixel on the screen
     pub fn get_pixel(&self, px: f64, py: f64) -> u64 {
         let x0 = px - (self.image_size.x / 2) as f64;
@@ -255,24 +261,41 @@ impl Mandelbrot {
 
         let new_width = clip_rect.width() as usize;
         let new_height = (clip_rect.width() / 2.) as usize;
+        //Adjust rendering size
+        self.image_size(new_width, new_height);
 
-        if let Some(cache) = &self.cache {
+        let zoom_delta = (-ui.input().scroll_delta.y / 100.) + 1.;
+        if zoom_delta != 1.0 {
+            self.zoom(zoom_delta);
+            println!("Changed zoom...recaching");
+            self.recache();
+        } else if let Some(cache) = &self.cache {
             let old_width = cache.len();
             let old_height = cache[0].len();
 
+            //Cached pixels
             if new_width == old_width && new_height == old_height {
                 if let Some(image) = &self.image {
+                    //Cached image
                     image.show_size(
                         ui,
                         Vec2::new(self.image_size.x as f32, self.image_size.y as f32),
                     );
+                } else {
+                    println!("Empty image cache...recaching");
+                    self.recache();
                 }
             } else {
-                self.paint(&painter);
+                println!("Changed size...recaching");
+                self.recache();
             }
         } else {
-            self.paint(&painter);
+            println!("Empty cache...recaching");
+            self.recache();
         }
+
+        self.paint(&painter);
+
         // Make sure we allocate what we used (everything)
         ui.expand_to_include_rect(painter.clip_rect());
 
@@ -292,7 +315,7 @@ impl Mandelbrot {
     }
 
     fn paint(&mut self, painter: &Painter) {
-        let mut shapes: Vec<Shape> = Vec::new();
+        let shapes: Vec<Shape> = Vec::new();
 
         let clip_rect = painter.clip_rect();
 
@@ -304,28 +327,14 @@ impl Mandelbrot {
             let old_height = cache[0].len();
 
             if width == old_width && height == old_height {
-                println!("using cache");
-
-                for (x, column) in cache.iter().enumerate() {
-                    for (y, color) in column.iter().enumerate() {
-                        let x = x as f32;
-                        let y = y as f32;
-
-                        let rect = Rect::from_two_pos(Pos2::new(x, y), Pos2::new(x + 1., y + 1.));
-                        let fill_color =
-                            Color32::from_rgba_unmultiplied(color[0], color[1], color[2], color[3]);
-                        let shape = Shape::rect_filled(rect, Rounding::none(), fill_color);
-                        shapes.push(shape);
-                    }
-                }
-                painter.extend(shapes);
                 return;
             }
         }
 
-        //Adjust rendering size
-        self.image_size(width as usize, height as usize);
+        painter.extend(shapes);
+    }
 
+    fn recache(&mut self) {
         let now = Instant::now();
 
         let pixels = self.get_color_map();
@@ -333,22 +342,7 @@ impl Mandelbrot {
         let elapsed = now.elapsed();
         println!("Calculation took      {:.2?}", elapsed);
 
-        for (x, column) in pixels.iter().enumerate() {
-            for (y, color) in column.iter().enumerate() {
-                let x = x as f32;
-                let y = y as f32;
-
-                let rect = Rect::from_two_pos(Pos2::new(x, y), Pos2::new(x + 1., y + 1.));
-                let fill_color =
-                    Color32::from_rgba_unmultiplied(color[0], color[1], color[2], color[3]);
-                let shape = Shape::rect_filled(rect, Rounding::none(), fill_color);
-                shapes.push(shape);
-            }
-        }
-
         self.cache = Some(pixels);
         self.write_cache_to_image();
-
-        painter.extend(shapes);
     }
 }
