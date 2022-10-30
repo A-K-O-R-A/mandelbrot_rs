@@ -234,26 +234,14 @@ impl Mandelbrot {
         data
     }
     pub fn write_cache_to_image(&mut self) {
-        let raster = Mandelbrot::to_raster(self.cache.as_ref().unwrap());
-        let mut out_data = Vec::new();
-
-        let now = Instant::now();
-
-        let mut encoder = png_pong::Encoder::new(&mut out_data).into_step_enc();
-        let step = png_pong::Step { raster, delay: 0 };
-        encoder.encode(&step).expect("Failed to add frame");
-
-        let elapsed = now.elapsed();
-        println!("Encoding took         {:.2?}", elapsed);
+        let cache = self.cache.as_ref().unwrap();
 
         let color_image = egui::ColorImage::from_rgba_unmultiplied(
             [self.image_size.x, self.image_size.y],
-            &Mandelbrot::to_binary(self.cache.as_ref().unwrap())[..],
+            &Mandelbrot::to_binary(&Mandelbrot::transpose_xy_map(cache))[..],
         );
 
         self.image = Some(RetainedImage::from_color_image("uwu", color_image));
-        //self.image =
-        //    Some(RetainedImage::from_color_image("uwu", &out_data).expect("Couldn't read image"));
     }
 }
 
@@ -262,18 +250,26 @@ impl Mandelbrot {
         //ui.ctx().request_repaint();
 
         let clip_rect = ui.available_rect_before_wrap();
-        
-        let painter = Painter::new(
-            ui.ctx().clone(),
-            ui.layer_id(),
-            clip_rect,
-        );
 
-        if let Some(image) = &self.image {
-            image.show_size(
-                ui,
-                Vec2::new(self.image_size.x as f32, self.image_size.y as f32),
-            );
+        let painter = Painter::new(ui.ctx().clone(), ui.layer_id(), clip_rect);
+
+        let new_width = clip_rect.width() as usize;
+        let new_height = (clip_rect.width() / 2.) as usize;
+
+        if let Some(cache) = &self.cache {
+            let old_width = cache.len();
+            let old_height = cache[0].len();
+
+            if new_width == old_width && new_height == old_height {
+                if let Some(image) = &self.image {
+                    image.show_size(
+                        ui,
+                        Vec2::new(self.image_size.x as f32, self.image_size.y as f32),
+                    );
+                }
+            } else {
+                self.paint(&painter);
+            }
         } else {
             self.paint(&painter);
         }
