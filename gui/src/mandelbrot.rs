@@ -132,7 +132,7 @@ impl Mandelbrot {
         self.calculate_offset();
         self.calculate_scale();
     }
-    pub fn zoom(&mut self, delta: f32) {
+    pub fn zoom(&mut self, delta: f32, pos: Pos2) {
         let delta = delta as f64;
 
         let x_range = (self.x_range.0 * delta, self.x_range.1 * delta);
@@ -264,9 +264,10 @@ impl Mandelbrot {
         //Adjust rendering size
         self.image_size(new_width, new_height);
 
-        let zoom_delta = (-ui.input().scroll_delta.y / 100.) + 1.;
-        if zoom_delta != 1.0 {
-            self.zoom(zoom_delta);
+        let zoom_delta = (-ui.input().scroll_delta.y / 200.) + 1.;
+        let mouse_pos = ui.input().pointer.hover_pos();
+        if zoom_delta != 1.0 && mouse_pos.is_some() {
+            self.zoom(zoom_delta, mouse_pos.unwrap());
             println!("Changed zoom...recaching");
             self.recache();
         } else if let Some(cache) = &self.cache {
@@ -310,7 +311,10 @@ impl Mandelbrot {
     fn options_ui(&mut self, ui: &mut Ui) {
         ui.add(Slider::new(&mut self.radius, 1.0..=10.0).text("Radius"));
         ui.add(Slider::new(&mut self.max_iterations, 1..=40_000).text("Max iterations"));
-
+        if ui.button("Reset zoom").clicked() {
+            self.change_range((-2.00, 0.47), (-1.12, 0.));
+            self.recache();
+        }
         //egui::reset_button(ui, self);
     }
 
