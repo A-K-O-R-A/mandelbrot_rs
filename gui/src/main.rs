@@ -21,8 +21,7 @@ struct MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Try to close the window");
-            self.mandelbrot.ui(ui, Some(100.));
+            self.mandelbrot.ui(ui);
         });
     }
 }
