@@ -1,4 +1,4 @@
-use palette::{rgb::Rgba, Hsv, IntoColor, Pixel};
+use palette::{rgb::Rgb, Hsv, IntoColor, Pixel};
 
 use crate::Color;
 
@@ -26,8 +26,10 @@ pub fn from_iterations(iteration: u64) -> Color {
 
     //let hsv_c = Hsv::new(iter_fact * 360., 1., 1.);
     let hsv_c = Hsv::new(iter_fact * 300. + 20., 1., 1.);
-    let rgb_c: Rgba = hsv_c.into_color();
+    let rgb_c: Rgb = hsv_c.into_color();
 
     //println!("{hsv_c:?}");
+    //let arr = ::<[u8; 4]>();
+    //[arr[0], arr[1], arr[2]]
     rgb_c.into_format().into_raw()
 }

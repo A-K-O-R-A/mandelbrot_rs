@@ -2,93 +2,10 @@
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
-//use std::time::Instant;
 
-//use crate::color::*;
 use crate::{Color, IMAGE_SIZE};
 
 const DATA_SIZE: usize = IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4;
-
-/*
-
-#[allow(dead_code)]
-pub mod skia {
-    use super::*;
-    use tiny_skia::{Paint, Pixmap, Rect, Shader, Transform};
-
-    pub fn save_file(pixmap: &Pixmap) {
-        let _ = &pixmap.save_png("skia.png").unwrap();
-    }
-
-    pub fn draw_pixmap(yx_map: &Vec<Vec<Color>>) -> Pixmap {
-        let mut paint = Paint::default();
-        let mut pixmap = Pixmap::new(IMAGE_SIZE.0, IMAGE_SIZE.1).unwrap();
-        //let pixmap = Pixmap::from_vec(&mut data).unwrap();
-
-        for x in 0..IMAGE_SIZE.0 {
-            for y in 0..IMAGE_SIZE.1 {
-                //Create single pixel as rect
-                let rect =
-                    Rect::from_xywh(x as f32, y as f32, 1., 1.).expect("Couldn't create rect");
-
-                //Change color
-                paint.shader = Shader::SolidColor(yx_map[x ][y ]);
-
-                //paint pixel
-                pixmap.fill_rect(rect, &paint, Transform::identity(), None);
-            }
-        }
-
-        pixmap
-    }
-}
-
-#[allow(dead_code)]
-pub mod png_pong_crate {
-    use png_pong::PngRaster;
-
-    use super::*;
-
-    pub fn save_file(raster: PngRaster) {
-        let mut out_data = Vec::new();
-
-        let now = Instant::now();
-
-        let mut encoder = png_pong::Encoder::new(&mut out_data).into_step_enc();
-        let step = png_pong::Step { raster, delay: 0 };
-        encoder.encode(&step).expect("Failed to add frame");
-
-        let elapsed = now.elapsed();
-        println!("Encoding took         {:.2?}", elapsed);
-
-        std::fs::write("png_pong.png", out_data).expect("Failed to save image");
-    }
-
-    pub fn to_raster(yx_map: &Vec<Vec<Color>>) -> PngRaster {
-        let mut pixels = Vec::with_capacity(DATA_SIZE / 4);
-        //let yx_map = transpose_map(xy_map);
-
-        for x_vec in yx_map {
-            for color in x_vec {
-                //Get bytes
-                let bytes = color.to_bytes();
-                let srgba = pix::rgb::SRgba8::new(bytes[0], bytes[1], bytes[2], bytes[3]);
-
-                pixels.push(srgba);
-            }
-        }
-
-        let raster = png_pong::PngRaster::Rgba8(pix::Raster::with_pixels(
-            IMAGE_SIZE.0,
-            IMAGE_SIZE.1,
-            &pixels[0..(DATA_SIZE / 4)],
-        ));
-
-        raster
-    }
-}
-
-*/
 
 #[allow(dead_code)]
 pub mod png_crate {
@@ -110,35 +27,27 @@ pub mod png_crate {
     }
 
     #[allow(dead_code)]
-    pub fn to_binary(yx_map: &Vec<Vec<Color>>) -> Vec<u8> {
+    pub fn to_binary(yx_map: &Vec<Vec<Color>>) -> Box<[u8; DATA_SIZE]> {
         //Without multithreading
-        let mut data: Vec<u8> = Vec::with_capacity(DATA_SIZE);
-        //let yx_map = transpose::yx_map(yx_map);
+        let mut data = Box::new([0_u8; DATA_SIZE]);
 
-        for x_vec in yx_map {
-            for color in x_vec {
+        let column_count = yx_map.len();
+        let row_length = yx_map[0].len();
+
+        for y in 0..column_count {
+            for x in 0..row_length {
                 //Get bytes
-                let mut bytes = color.to_vec();
+                let bytes = yx_map[y][x];
+                let pos = (x + (y * row_length)) * 4;
 
-                data.append(&mut bytes);
+                data[pos] = bytes[0];
+                data[pos + 1] = bytes[1];
+                data[pos + 2] = bytes[2];
+                //Alpha channel is always 25
+                data[pos + 3] = 255;
             }
         }
 
-        /*
-        //With rayon parallel iterators
-        let data: Vec<u8> = yx_map
-            .par_iter()
-            .map(|x_vec| {
-                x_vec
-                    .par_iter()
-                    .map(|color| color.to_bytes())
-                    .flatten()
-                    .collect::<Vec<u8>>()
-            })
-            .flatten()
-            .collect();
-        */
-
-        data[0..DATA_SIZE].to_vec()
+        data
     }
 }

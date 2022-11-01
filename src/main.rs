@@ -7,13 +7,13 @@ mod color;
 mod data;
 mod sets;
 
-pub const IMAGE_SIZE: (usize, usize) = (4000, 2000);
+pub const IMAGE_SIZE: (usize, usize) = (2000, 1000);
 pub const MAX_ITERATION: u64 = 1_000;
 
-pub type Color = [u8; 4];
+pub type Color = [u8; 3];
 
 fn main() {
-    let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.0) as u64)));
+    let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.1) as u64)));
     let now = Instant::now();
 
     let y_range = 0..IMAGE_SIZE.1;
@@ -48,7 +48,7 @@ fn main() {
     //let raster = data::png_pong_crate::to_raster(&transposed);
 
     let elapsed = now.elapsed();
-    println!("Drawing/Converting    {:.2?}", elapsed);
+    println!("Coversion took        {:.2?}", elapsed);
     let now = Instant::now();
 
     //data::skia::save_file(&pixmap);
