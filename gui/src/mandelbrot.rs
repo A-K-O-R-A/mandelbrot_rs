@@ -31,7 +31,7 @@ pub struct Mandelbrot {
     scale: Dim<f64>,
     pub radius: f64,
     pub max_iterations: u64,
-    cache: Option<Vec<Vec<[u8; 4]>>>,
+    cache: Option<Vec<Vec<[u8; 3]>>>,
     image: Option<RetainedImage>,
 }
 
@@ -55,52 +55,7 @@ impl Default for Mandelbrot {
     }
 }
 
-#[allow(dead_code)]
 impl Mandelbrot {
-    pub fn from_size(width: usize, height: usize) -> Self {
-        let mut inst = Mandelbrot {
-            image_size: Dim {
-                x: width,
-                y: height,
-            },
-            x_range: (-2.00, 0.47),
-            y_range: (-1.12, 0.),
-            offset: Dim { x: 0., y: 0. },
-            scale: Dim { x: 0., y: 0. },
-            radius: 2.,
-            max_iterations: 1_000,
-            cache: None,
-            image: None,
-        };
-        inst.calculate_offset();
-        inst.calculate_scale();
-
-        inst
-    }
-    pub fn from_range(image_size: Dim<usize>, x_range: (f64, f64), y_range: (f64, f64)) -> Self {
-        let mut inst = Mandelbrot {
-            image_size,
-            x_range,
-            y_range,
-            offset: Dim { x: 0., y: 0. },
-            scale: Dim { x: 0., y: 0. },
-            radius: 2.,
-            max_iterations: 1_000,
-            cache: None,
-            image: None,
-        };
-        inst.calculate_offset();
-        inst.calculate_scale();
-
-        inst
-    }
-
-    pub fn radius(&mut self, r: f64) {
-        self.radius = r;
-    }
-    pub fn max_iterations(&mut self, n: u64) {
-        self.max_iterations = n;
-    }
     pub fn image_size(&mut self, w: usize, h: usize) {
         self.image_size = Dim { x: w, y: h };
         self.calculate_offset();
@@ -134,14 +89,9 @@ impl Mandelbrot {
         self.calculate_scale();
     }
     pub fn zoom(&mut self, delta: f32, pos: Pos2) {
-        //println!("=====================================");
-        //println!("DELTA  {delta}");
-        //println!("ORANGE x:{:?}, y:{:?}", self.x_range, self.y_range);
-
         //Relative position of the curosr, from 0-1
         let rel_x = pos.x / (self.image_size.x as f32);
         let rel_y = pos.y / (self.image_size.y as f32);
-        //println!("REL    x:{:?}, y:{:?}", rel_x, rel_y);
 
         //New image are, relative values from 0-1
         let cutout = Rect::from_two_pos(
@@ -154,15 +104,8 @@ impl Mandelbrot {
                 y: rel_y + delta / 2.,
             },
         );
-        //println!("CUTOUT {:?}", cutout);
 
-        //let delta = delta as f64;
         let (x_range, y_range) = self.cutout_to_range(cutout);
-
-        //println!("NRANGE x:{:?}, y:{:?}", x_range, y_range);
-        //let x_range = (self.x_range.0 * delta, self.x_range.1 * delta);
-        //let y_range = (self.y_range.0 * delta, self.y_range.1 * delta);
-
         self.change_range(x_range, y_range);
     }
     pub fn cutout_to_range(&self, rect: Rect) -> ((f64, f64), (f64, f64)) {
@@ -215,7 +158,7 @@ impl Mandelbrot {
     }
 
     ///Get a 2D Vector of colors for every single pixel on the screen Row<Column<[u8;4]>>
-    pub fn get_color_map(&self) -> Vec<Vec<[u8; 4]>> {
+    pub fn get_color_map(&self) -> Vec<Vec<[u8; 3]>> {
         let y_range = 0..self.image_size.y;
 
         y_range
@@ -235,38 +178,21 @@ impl Mandelbrot {
             .collect()
     }
 
-    pub fn to_raster(yx_map: &Vec<Vec<[u8; 4]>>) -> png_pong::PngRaster {
-        let mut pixels = Vec::new();
-
-        let max_x = yx_map.len();
-        let max_y = yx_map[0].len();
-
-        for x_vec in yx_map {
-            for bytes in x_vec {
-                let srgba = pix::rgb::SRgba8::new(bytes[0], bytes[1], bytes[2], bytes[3]);
-
-                pixels.push(srgba);
-            }
-        }
-
-        let raster = png_pong::PngRaster::Rgba8(pix::Raster::with_pixels(
-            max_x as u32,
-            max_y as u32,
-            &pixels[0..(max_x * max_y)],
-        ));
-
-        raster
-    }
-    pub fn to_binary(yx_map: &Vec<Vec<[u8; 4]>>) -> Vec<u8> {
+    pub fn to_binary(&self, yx_map: &Vec<Vec<[u8; 3]>>) -> Vec<u8> {
         //Without multithreading
-        let mut data: Vec<u8> = Vec::with_capacity(yx_map.len() * yx_map[0].len() * 4);
+        let row_length = self.image_size.x;
+        let column_height = self.image_size.y;
+        let mut data: Vec<u8> = Vec::with_capacity(row_length * column_height * 4);
 
-        for x_vec in yx_map {
-            for color in x_vec {
+        for y in 0..column_height {
+            for x in 0..row_length {
                 //Get bytes
-                let mut bytes = color.to_vec();
+                let bytes = yx_map[y][x];
 
-                data.append(&mut bytes);
+                data.push(bytes[0]);
+                data.push(bytes[1]);
+                data.push(bytes[2]);
+                data.push(255);
             }
         }
 
@@ -277,11 +203,33 @@ impl Mandelbrot {
 
         let color_image = egui::ColorImage::from_rgba_unmultiplied(
             [self.image_size.x, self.image_size.y],
-            &Mandelbrot::to_binary(&cache)[..],
+            &self.to_binary(&cache)[..],
         );
 
         let image = RetainedImage::from_color_image("uwu", color_image);
         self.image = Some(image);
+    }
+    fn recache(&mut self) {
+        let now = Instant::now();
+
+        println!("Recaching -------------------------");
+
+        let pixels = self.get_color_map();
+        println!(
+            "Image size            {} x {}",
+            pixels[0].len(),
+            pixels.len()
+        );
+
+        let elapsed = now.elapsed();
+        println!("Calculation took      {:.2?}", elapsed);
+        let now = Instant::now();
+
+        self.cache = Some(pixels);
+        self.write_cache_to_image();
+
+        let elapsed = now.elapsed();
+        println!("Creating image took   {:.2?}\n", elapsed);
     }
 }
 
@@ -377,28 +325,5 @@ impl Mandelbrot {
         }
 
         painter.extend(shapes);
-    }
-
-    fn recache(&mut self) {
-        let now = Instant::now();
-
-        println!("Recaching -------------------------");
-
-        let pixels = self.get_color_map();
-        println!(
-            "Image size            {} x {}",
-            pixels[0].len(),
-            pixels.len()
-        );
-
-        let elapsed = now.elapsed();
-        println!("Calculation took      {:.2?}", elapsed);
-        let now = Instant::now();
-
-        self.cache = Some(pixels);
-        self.write_cache_to_image();
-
-        let elapsed = now.elapsed();
-        println!("Creating image took   {:.2?}\n", elapsed);
     }
 }

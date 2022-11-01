@@ -120,7 +120,7 @@ impl Mandelbrot {
     }
 
     ///Get a 2D Vector of colors for every single pixel on the screen
-    pub fn get_color_map(&self) -> Vec<Vec<[u8; 4]>> {
+    pub fn get_color_map(&self) -> Vec<Vec<[u8; 3]>> {
         let x_range = 0..self.image_size.x;
         x_range
             .into_par_iter()
