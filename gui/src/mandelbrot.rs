@@ -8,6 +8,7 @@ use std::time::Instant;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(default))]
 ///2 Dimensions
+#[derive(Debug)]
 pub struct Dim<T> {
     x: T,
     y: T,
@@ -182,8 +183,8 @@ impl Mandelbrot {
         let new_t_x_max = t_x_max * (rect.right() as f64);
 
         //Switch bottom anmd top bcs weird coordinatze system from library
-        let new_t_y_min = dbg!(t_y_max * (rect.top() as f64));
-        let new_t_y_max = dbg!(t_y_max * (rect.bottom() as f64));
+        let new_t_y_min = t_y_max * (rect.top() as f64);
+        let new_t_y_max = t_y_max * (rect.bottom() as f64);
 
         let new_x_range = (new_t_x_min - x_trans, new_t_x_max - x_trans);
         let new_y_range = (new_t_y_min - y_trans, new_t_y_max - y_trans);
@@ -215,14 +216,15 @@ impl Mandelbrot {
 
     ///Get a 2D Vector of colors for every single pixel on the screen Row<Column<[u8;4]>>
     pub fn get_color_map(&self) -> Vec<Vec<[u8; 4]>> {
-        let x_range = 0..self.image_size.x;
-        x_range
+        let y_range = 0..self.image_size.y;
+
+        y_range
             .into_par_iter()
-            .map(|x| {
-                let y_range = 0..self.image_size.y;
-                y_range
+            .map(|y| {
+                let x_range = 0..self.image_size.x;
+                x_range
                     .into_par_iter()
-                    .map(|y| {
+                    .map(|x| {
                         //Get iteration count
                         let iter = self.get_pixel(x as f64, y as f64);
 
@@ -233,28 +235,8 @@ impl Mandelbrot {
             .collect()
     }
 
-    pub fn transpose_xy_map(xy_map: &Vec<Vec<[u8; 4]>>) -> Vec<Vec<[u8; 4]>> {
-        let mut yx_map: Vec<Vec<[u8; 4]>> = Vec::new();
-
-        let max_x = xy_map.len();
-        let max_y = xy_map[0].len();
-
-        let mut y = 0;
-        while y < max_y {
-            let mut x = 0;
-            let mut row = Vec::with_capacity(max_x);
-            while x < max_x {
-                row.push(xy_map[x][y]);
-                x += 1;
-            }
-            yx_map.push(row);
-            y += 1;
-        }
-        yx_map
-    }
-    pub fn to_raster(xy_map: &Vec<Vec<[u8; 4]>>) -> png_pong::PngRaster {
+    pub fn to_raster(yx_map: &Vec<Vec<[u8; 4]>>) -> png_pong::PngRaster {
         let mut pixels = Vec::new();
-        let yx_map = Mandelbrot::transpose_xy_map(&xy_map);
 
         let max_x = yx_map.len();
         let max_y = yx_map[0].len();
@@ -277,8 +259,7 @@ impl Mandelbrot {
     }
     pub fn to_binary(yx_map: &Vec<Vec<[u8; 4]>>) -> Vec<u8> {
         //Without multithreading
-        let mut data: Vec<u8> = Vec::new();
-        //let yx_map = transpose::yx_map(yx_map);
+        let mut data: Vec<u8> = Vec::with_capacity(yx_map.len() * yx_map[0].len() * 4);
 
         for x_vec in yx_map {
             for color in x_vec {
@@ -296,10 +277,11 @@ impl Mandelbrot {
 
         let color_image = egui::ColorImage::from_rgba_unmultiplied(
             [self.image_size.x, self.image_size.y],
-            &Mandelbrot::to_binary(&Mandelbrot::transpose_xy_map(cache))[..],
+            &Mandelbrot::to_binary(&cache)[..],
         );
 
-        self.image = Some(RetainedImage::from_color_image("uwu", color_image));
+        let image = RetainedImage::from_color_image("uwu", color_image);
+        self.image = Some(image);
     }
 }
 
@@ -311,23 +293,24 @@ impl Mandelbrot {
 
         let painter = Painter::new(ui.ctx().clone(), ui.layer_id(), clip_rect);
 
-        let new_width = clip_rect.width() as usize;
-        let new_height = (clip_rect.width() / 2.) as usize;
+        let new_w = clip_rect.width() as usize;
+        let new_h = (clip_rect.width() / 2.) as usize;
         //Adjust rendering size
-        self.image_size(new_width, new_height);
+        self.image_size(new_w, new_h);
 
         let zoom_delta = (-ui.input().scroll_delta.y / 200.) + 1.;
         let mouse_pos = ui.input().pointer.hover_pos();
         if zoom_delta != 1.0 && mouse_pos.is_some() {
             self.zoom(zoom_delta, mouse_pos.unwrap());
             println!("Changed zoom...recaching");
+
             self.recache();
         } else if let Some(cache) = &self.cache {
-            let old_width = cache.len();
-            let old_height = cache[0].len();
+            let old_h = cache.len();
+            let old_w = cache[0].len();
 
             //Cached pixels
-            if new_width == old_width && new_height == old_height {
+            if new_w == old_w && new_h == old_h {
                 if let Some(image) = &self.image {
                     //Cached image
                     image.show_size(
@@ -339,7 +322,10 @@ impl Mandelbrot {
                     self.recache();
                 }
             } else {
-                println!("Changed size...recaching");
+                println!(
+                    "Changed size...recaching (old: {}x{} | new: {}x{})",
+                    old_w, old_h, new_w, new_h
+                );
                 self.recache();
             }
         } else {
@@ -371,7 +357,6 @@ impl Mandelbrot {
         if ui.button("Force recache").clicked() {
             self.recache();
         }
-        //egui::reset_button(ui, self);
     }
 
     fn paint(&mut self, painter: &Painter) {
@@ -397,12 +382,23 @@ impl Mandelbrot {
     fn recache(&mut self) {
         let now = Instant::now();
 
+        println!("Recaching -------------------------");
+
         let pixels = self.get_color_map();
+        println!(
+            "Image size            {} x {}",
+            pixels[0].len(),
+            pixels.len()
+        );
 
         let elapsed = now.elapsed();
         println!("Calculation took      {:.2?}", elapsed);
+        let now = Instant::now();
 
         self.cache = Some(pixels);
         self.write_cache_to_image();
+
+        let elapsed = now.elapsed();
+        println!("Creating image took   {:.2?}\n", elapsed);
     }
 }
