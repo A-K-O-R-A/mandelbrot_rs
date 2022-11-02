@@ -25,16 +25,12 @@ pub mod mandelbrot {
         let mut y = 0.0;
         let mut iteration = 0_u64;
 
-        //println!("{x} : {y}");
         while ((x * x + y * y) <= RADIUS * RADIUS) && (iteration < MAX_ITERATION) {
             let xtemp = x * x - y * y + x0;
             y = 2. * x * y + y0;
             x = xtemp;
             iteration += 1;
         }
-
-        //color := palette[iteration]
-        //plot(Px, Py, color)
 
         iteration
     }
