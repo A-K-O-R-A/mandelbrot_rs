@@ -80,10 +80,23 @@ impl Mandelbrot {
         let mut y = 0.0;
         let mut iteration = 0_u64;
 
+        /*
         while ((x * x + y * y) <= self.radius * self.radius) && (iteration < self.max_iterations) {
             let xtemp = x * x - y * y + x0;
             y = 2. * x * y + y0;
             x = xtemp;
+            iteration += 1;
+        }
+        */
+
+        let mut x2 = 0.;
+        let mut y2 = 0.;
+
+        while (x2 + y2 <= 4. && iteration < self.max_iterations) {
+            y = 2. * x * y + y0;
+            x = x2 - y2 + x0;
+            x2 = x * x;
+            y2 = y * y;
             iteration += 1;
         }
 
