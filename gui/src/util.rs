@@ -1,5 +1,3 @@
-use rayon::iter::FromParallelIterator;
-
 #[derive(PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(default))]
@@ -16,6 +14,8 @@ pub struct Matrix<T> {
     pub vec: Vec<T>,
 }
 
+//Maybe this will be implemented later
+#[allow(dead_code)]
 impl Matrix<[u8; 3]> {
     ///Creates and allocates a matrix with specified dimensions
     pub fn dim(w: usize, h: usize) -> Self {
