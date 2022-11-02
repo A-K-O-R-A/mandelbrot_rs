@@ -2,6 +2,7 @@ use egui_extras::RetainedImage;
 
 mod logic;
 mod ui;
+mod interactions;
 
 use crate::util::*;
 

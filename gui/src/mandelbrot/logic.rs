@@ -40,26 +40,7 @@ impl Mandelbrot {
         self.calculate_offset();
         self.calculate_scale();
     }
-    pub fn zoom(&mut self, delta: f32, pos: Pos2) {
-        //Relative position of the curosr, from 0-1
-        let rel_x = pos.x / (self.image_size.x as f32);
-        let rel_y = pos.y / (self.image_size.y as f32);
 
-        //New image are, relative values from 0-1
-        let cutout = Rect::from_two_pos(
-            Pos2 {
-                x: rel_x - delta / 2.,
-                y: rel_y - delta / 2.,
-            },
-            Pos2 {
-                x: rel_x + delta / 2.,
-                y: rel_y + delta / 2.,
-            },
-        );
-
-        let (x_range, y_range) = self.cutout_to_range(cutout);
-        self.change_range(x_range, y_range);
-    }
     pub fn cutout_to_range(&self, rect: Rect) -> ((f64, f64), (f64, f64)) {
         let (x_min, x_max) = self.x_range;
         let (y_min, y_max) = self.y_range;
@@ -166,7 +147,7 @@ impl Mandelbrot {
     pub fn rerender(&mut self) {
         let now = Instant::now();
 
-        println!("Recaching -------------------------");
+        println!("Rerendering -------------------------");
 
         let pixels = self.get_color_map();
         println!(
