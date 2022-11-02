@@ -286,15 +286,15 @@ impl Mandelbrot {
         // Make sure we allocate what we used (everything)
         ui.expand_to_include_rect(painter.clip_rect());
 
-        Frame::popup(ui.style())
-            .stroke(Stroke::none())
-            .show(ui, |ui| {
-                ui.set_max_width(270.0);
-                CollapsingHeader::new("Settings").show(ui, |ui| self.options_ui(ui));
-            });
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| self.options_ui(ui));
+            ui.add_space(30.);
+            ui.vertical(|ui| self.stats_ui(ui));
+        });
     }
 
     fn options_ui(&mut self, ui: &mut Ui) {
+        ui.heading("Options");
         ui.add(Slider::new(&mut self.radius, 1.0..=10.0).text("Radius"));
         ui.add(Slider::new(&mut self.max_iterations, 1..=40_000).text("Max iterations"));
         if ui.button("Reset zoom").clicked() {
@@ -305,6 +305,23 @@ impl Mandelbrot {
         if ui.button("Force recache").clicked() {
             self.recache();
         }
+    }
+
+    fn stats_ui(&mut self, ui: &mut Ui) {
+        ui.heading("Stats");
+        ui.label(format!(
+            "Image size {}x{}",
+            self.image_size.x, self.image_size.y
+        ));
+        ui.label(format!(
+            "X Range    {:.6} to {:.6}",
+            self.x_range.0, self.x_range.1
+        ));
+
+        ui.label(format!(
+            "Y Range    {:.6} to {:.6}",
+            self.y_range.0, self.y_range.1
+        ));
     }
 
     fn paint(&mut self, painter: &Painter) {

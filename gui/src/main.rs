@@ -2,6 +2,8 @@
 use eframe::egui;
 
 mod mandelbrot;
+mod util;
+
 use mandelbrot::Mandelbrot;
 
 fn main() {
