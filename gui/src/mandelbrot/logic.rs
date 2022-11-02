@@ -163,7 +163,7 @@ impl Mandelbrot {
         self.image = Some(image);
     }
 
-    pub fn recache(&mut self) {
+    pub fn rerender(&mut self) {
         let now = Instant::now();
 
         println!("Recaching -------------------------");
