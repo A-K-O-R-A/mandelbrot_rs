@@ -1,17 +1,20 @@
 // For reading and opening files
+
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
+use crate::color;
+use crate::sets;
 use crate::{Color, IMAGE_SIZE};
 
-const DATA_SIZE: usize = IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4;
-
 #[allow(dead_code)]
-pub mod png_crate {
+pub mod single {
+    const DATA_SIZE: usize = IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4;
+
     use super::*;
-    pub fn save_file(data: &[u8]) {
-        let path = Path::new(r"./png_crate.png");
+
+    pub fn save_file(path: &str, data: &[u8]) {
         let file = File::create(path).unwrap();
         let ref mut w = BufWriter::new(file);
 
@@ -29,10 +32,11 @@ pub mod png_crate {
     #[allow(dead_code)]
     pub fn to_binary(yx_map: &Vec<Vec<Color>>) -> Box<[u8; DATA_SIZE]> {
         //Without multithreading
-        let mut data = Box::new([0_u8; DATA_SIZE]);
 
         let column_count = yx_map.len();
         let row_length = yx_map[0].len();
+
+        let mut data = Box::new([0_u8; DATA_SIZE]);
 
         for y in 0..column_count {
             for x in 0..row_length {
@@ -50,4 +54,37 @@ pub mod png_crate {
 
         data
     }
+
+    use pbr::ProgressBar;
+    use rayon::prelude::*;
+    use std::sync::{Arc, Mutex};
+
+    pub fn collect_color_map() -> Vec<Vec<Color>> {
+        let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.1) as u64)));
+        let y_range = 0..IMAGE_SIZE.1;
+
+        y_range
+            .into_par_iter()
+            .map(move |y| {
+                let x_range = 0..IMAGE_SIZE.0;
+
+                let colors = x_range
+                    .into_par_iter()
+                    .map(|x| {
+                        //Get iteration count
+                        let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
+
+                        color::from_iterations(iter)
+                    })
+                    .collect();
+
+                //Reduces speed a bit
+                pb.lock().unwrap().inc();
+
+                colors
+            })
+            .collect()
+    }
 }
+
+mod chunks {}

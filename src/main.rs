@@ -1,6 +1,3 @@
-use pbr::ProgressBar;
-use rayon::prelude::*;
-use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 mod color;
@@ -13,54 +10,48 @@ pub const MAX_ITERATION: u64 = 1_000;
 pub type Color = [u8; 3];
 
 fn main() {
+    //let path = r"./single.png";
+    //single_main(path);
+
+    let path = r"./chunked.png";
+    chunked_main(path);
+}
+
+fn chunked_main(path: &str) {
+    use std::fs::File;
+    use std::io::BufWriter;
+    use std::path::Path;
+    const CHUNK_SIZE: usize = IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4;
+
+    let path = Path::new(path);
+    let file = File::create(path).unwrap();
+    let ref mut w = BufWriter::new(file);
+
+    let mut encoder = png::Encoder::new(w, IMAGE_SIZE.0 as u32, IMAGE_SIZE.1 as u32); // Width is 2 pixels and height is 1.
+    encoder.set_color(png::ColorType::Rgba);
+    encoder.set_depth(png::BitDepth::Eight);
+
+    let mut writer = encoder.write_header().unwrap();
+}
+
+fn single_main(path: &str) {
     let now = Instant::now();
 
-    let yx_map = collect_color_map();
+    let yx_map = data::single::collect_color_map();
 
     let elapsed = now.elapsed();
     println!("Calculation took      {:.2?}", elapsed);
     let now = Instant::now();
 
-    //let pixmap = data::skia::draw_pixmap(&xy_map);
-    let bin = data::png_crate::to_binary(&yx_map);
-    //let raster = data::png_pong_crate::to_raster(&transposed);
+    let bin = data::single::to_binary(&yx_map);
+    //let writer = data::chunks::create_writer(r"./png_crate.png");
 
     let elapsed = now.elapsed();
     println!("Coversion took        {:.2?}", elapsed);
     let now = Instant::now();
 
-    //data::skia::save_file(&pixmap);
-    data::png_crate::save_file(&bin[..]);
-    //data::png_pong_crate::save_file(raster);
+    data::single::save_file(path, &bin[..]);
 
     let elapsed = now.elapsed();
     println!("Encoding/Writing      {:.2?}", elapsed);
-}
-
-#[allow(dead_code)]
-fn collect_color_map() -> Vec<Vec<Color>> {
-    let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.1) as u64)));
-    let y_range = 0..IMAGE_SIZE.1;
-
-    y_range
-        .into_par_iter()
-        .map(move |y| {
-            let x_range = 0..IMAGE_SIZE.0;
-
-            let colors = x_range
-                .into_par_iter()
-                .map(|x| {
-                    //Get iteration count
-                    let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
-
-                    color::from_iterations(iter)
-                })
-                .collect();
-
-            //Reduces speed a bit
-            pb.lock().unwrap().inc();
-
-            colors
-        })
-        .collect()
 }
