@@ -1,5 +1,5 @@
 pub mod mandelbrot {
-    use crate::{IMAGE_SIZE, MAX_ITERATION};
+    use crate::{MAX_ITERATION, SIZE};
 
     const RADIUS: f64 = 2.;
 
@@ -10,13 +10,13 @@ pub mod mandelbrot {
     const X_OFF: f64 = (X_RANGE.0 + X_RANGE.1) / 2.;
     const Y_OFF: f64 = (Y_RANGE.0 + Y_RANGE.1) / 2.;
 
-    const X_SCALE: f64 = (IMAGE_SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
-    const Y_SCALE: f64 = (IMAGE_SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
+    const X_SCALE: f64 = (SIZE.0 as f64) / (-(X_RANGE.0 - X_RANGE.1));
+    const Y_SCALE: f64 = (SIZE.1 as f64) / (-(Y_RANGE.0 - Y_RANGE.1));
 
     ///Source: https://en.wikipedia.org/wiki/Mandelbrot_set
     pub fn get_pixel(px: f64, py: f64) -> u64 {
-        let x0 = px - (IMAGE_SIZE.0 / 2) as f64;
-        let y0 = py - (IMAGE_SIZE.1 / 2) as f64;
+        let x0 = px - (SIZE.0 / 2) as f64;
+        let y0 = py - (SIZE.1 / 2) as f64;
 
         let x0 = (x0 / X_SCALE) + X_OFF;
         let y0 = (y0 / Y_SCALE) + Y_OFF;
