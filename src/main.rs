@@ -1,66 +1,138 @@
-use pbr::ProgressBar;
-use rayon::prelude::*;
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use byte_unit::Byte;
+use pbr::MultiBar;
+use std::{error::Error, io::Write, time::Instant};
 
 mod color;
 mod data;
 mod sets;
 
-pub const IMAGE_SIZE: (usize, usize) = (4000, 2000);
+use data::{chunked, single};
+
+pub const SIZE: (usize, usize) = (8000, 4000);
 pub const MAX_ITERATION: u64 = 1_000;
+pub const ROWS_PER_CHUNK: usize = 1_000; //500 rows
 
 pub type Color = [u8; 3];
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
+    //let path = r"./single.png";
+    //single_main(path)?;
+
+    let path = r"./chunked.png";
+    chunked_main(path)?;
+
+    Ok(())
+}
+
+fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
+    chunked::check_size();
+
+    println!("Generating RGB image");
+    println!(
+        " - Dimensions {}x{} (raw size {})",
+        SIZE.0,
+        SIZE.1,
+        Byte::from_bytes(single::DATA_SIZE_RGB as u128).get_appropriate_unit(true)
+    );
+    println!(
+        " - Splitting into {} chunks with {} bytes each",
+        chunked::CHUNK_COUNT,
+        Byte::from_bytes(chunked::CHUNK_SIZE_RGB as u128).get_appropriate_unit(true)
+    );
+    println!(" - Estimated time        ~{:.2}s", chunked::time_estimate());
+    println!(
+        " - Estimated file size   ~{}",
+        chunked::size_estimate().to_string()
+    );
+    println!("");
+
+    use std::fs::File;
+    use std::io::BufWriter;
+    use std::path::Path;
+
     let now = Instant::now();
 
-    let yx_map = collect_color_map();
+    let path = Path::new(path);
+    let file = File::create(path)?;
+    let ref mut w = BufWriter::new(file);
+
+    let mut encoder = png::Encoder::new(w, SIZE.0 as u32, SIZE.1 as u32);
+    encoder.set_color(png::ColorType::Rgb);
+    encoder.set_depth(png::BitDepth::Eight);
+
+    let mut writer = encoder.write_header()?;
+    let mut stream_writer = writer.stream_writer_with_size(chunked::CHUNK_SIZE_RGB)?;
+
+    let mb = MultiBar::new();
+    let mut chunks_bar = mb.create_bar(chunked::CHUNK_COUNT as u64);
+    chunks_bar.message("Generating chunk: ");
+
+    //Start listening to bar changes
+    let _ = std::thread::spawn(move || {
+        mb.listen();
+    });
+
+    for i in 0..chunked::CHUNK_COUNT {
+        let start_row = i * ROWS_PER_CHUNK;
+        let end_row = (i + 1) * ROWS_PER_CHUNK;
+        let row_range = start_row..end_row;
+
+        chunks_bar.inc();
+
+        let chunk = chunked::generate_rows(row_range);
+        let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
+
+        println!(
+            ". . . . . . writing chunk {}                         ",
+            i + 1
+        );
+
+        let now = Instant::now();
+        stream_writer.write_all(&chunk_bin[..])?;
+        let elapsed = now.elapsed();
+
+        print!("{esc}[1A{esc}[2K", esc = 27 as char);
+        println!(
+            "writing Chunk {} took {:.2?} {esc}[2A",
+            i + 1,
+            elapsed,
+            esc = 27 as char
+        );
+    }
+    chunks_bar.finish();
+
+    let elapsed = now.elapsed();
+    println!(
+        "{esc}[2B\nWrote {} chunks in {:.2?}",
+        chunked::CHUNK_COUNT,
+        elapsed,
+        esc = 27 as char
+    );
+
+    Ok(())
+}
+
+#[allow(dead_code)]
+fn single_main(path: &str) -> Result<(), Box<dyn Error>> {
+    let now = Instant::now();
+
+    let yx_map = single::collect_color_map();
 
     let elapsed = now.elapsed();
     println!("Calculation took      {:.2?}", elapsed);
     let now = Instant::now();
 
-    //let pixmap = data::skia::draw_pixmap(&xy_map);
-    let bin = data::png_crate::to_binary(&yx_map);
-    //let raster = data::png_pong_crate::to_raster(&transposed);
+    let bin = single::to_rgb_binary(&yx_map);
+    //let writer = chunks::create_writer(r"./png_crate.png");
 
     let elapsed = now.elapsed();
     println!("Coversion took        {:.2?}", elapsed);
     let now = Instant::now();
 
-    //data::skia::save_file(&pixmap);
-    data::png_crate::save_file(&bin[..]);
-    //data::png_pong_crate::save_file(raster);
+    single::save_file(path, &bin[..])?;
 
     let elapsed = now.elapsed();
     println!("Encoding/Writing      {:.2?}", elapsed);
-}
 
-#[allow(dead_code)]
-fn collect_color_map() -> Vec<Vec<Color>> {
-    let pb = Arc::new(Mutex::new(ProgressBar::new((IMAGE_SIZE.1) as u64)));
-    let y_range = 0..IMAGE_SIZE.1;
-
-    y_range
-        .into_par_iter()
-        .map(move |y| {
-            let x_range = 0..IMAGE_SIZE.0;
-
-            let colors = x_range
-                .into_par_iter()
-                .map(|x| {
-                    //Get iteration count
-                    let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
-
-                    color::from_iterations(iter)
-                })
-                .collect();
-
-            //Reduces speed a bit
-            pb.lock().unwrap().inc();
-
-            colors
-        })
-        .collect()
+    Ok(())
 }
