@@ -79,8 +79,10 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
 
         chunks_bar.inc();
 
-        let chunk = chunked::generate_rows(row_range);
-        let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
+        //let chunk = chunked::generate_rows(row_range);
+        //let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
+
+        let chunk_bin = chunked::generate_rows_bin(row_range);
 
         println!(
             ". . . . . . writing chunk {}                         ",

@@ -95,6 +95,46 @@ pub mod chunked {
         data
     }
 
+    ///Generate rows in a specifies row range (max is 0..SIZE.1)
+    pub fn generate_rows_bin(row_range: Range<usize>) -> Box<[u8; CHUNK_SIZE_RGB]> {
+        let start_index = row_range.start * SIZE.0;
+        let end_index = row_range.end * SIZE.0;
+        let pb = Arc::new(Mutex::new(ProgressBar::new(
+            (row_range.end - row_range.start) as u64,
+        )));
+        pb.lock().unwrap().message("Row ");
+
+        let cpus = num_cpus::get();
+        println!("{}", cpus);
+
+        let mut arr = Box::new([0_u8; CHUNK_SIZE_RGB]);
+
+        for i in row_range.into_iter() {
+            println!("{i}");
+        }
+
+        let colors: Vec<Color> = (start_index..end_index)
+            .into_par_iter()
+            .map(|i| {
+                let x = i % SIZE.0;
+                let y = i / SIZE.1;
+
+                let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
+
+                color::from_iterations(iter)
+            })
+            .collect();
+
+        for i in 0..colors.len() {
+            let pos = i * 3;
+            arr[pos] = colors[i][0];
+            arr[pos + 1] = colors[i][1];
+            arr[pos + 1] = colors[i][2];
+        }
+
+        arr
+    }
+
     //For time and file size estimates
     const SIZE_FACTOR: f64 = 5.01171875e-08;
     const TIME_FACTOR: f64 = 1.4357734375e-07;

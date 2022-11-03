@@ -10,6 +10,7 @@ rayon = "1.5.3"
 png = "0.17.6"
 pbr = "1.0.4"
 byte-unit = "4.0.17"
+num_cpus = "1.14.0"
 
 [dependencies.palette]
 version = "0.6.1"
