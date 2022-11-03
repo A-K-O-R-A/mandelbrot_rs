@@ -1,3 +1,4 @@
+use byte_unit::Byte;
 use std::{error::Error, io::Write, time::Instant};
 
 mod color;
@@ -6,7 +7,7 @@ mod sets;
 
 use data::{chunked, single};
 
-pub const SIZE: (usize, usize) = (4000, 2000);
+pub const SIZE: (usize, usize) = (40000, 20000);
 pub const MAX_ITERATION: u64 = 1_000;
 
 pub type Color = [u8; 3];
@@ -23,6 +24,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
     chunked::check_size();
+
+    println!("Generating RGB image");
+    println!(" - Dimensions {}x{}", SIZE.0, SIZE.1);
+    println!(
+        " - Raw Size {}",
+        Byte::from_bytes(single::DATA_SIZE_RGB as u128).get_appropriate_unit(true)
+    );
+    println!(
+        " - {} chunks with {} bytes each",
+        chunked::CHUNK_COUNT,
+        Byte::from_bytes(chunked::CHUNK_SIZE_RGB as u128).get_appropriate_unit(true)
+    );
+    println!("");
 
     use std::fs::File;
     use std::io::BufWriter;
@@ -45,6 +59,8 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
         let start_row = i * chunked::ROWS_PER_CHUNK;
         let end_row = (i + 1) * chunked::ROWS_PER_CHUNK;
         let row_range = start_row..end_row;
+
+        println!("Generating chunk {}/{}", i, chunked::CHUNK_COUNT);
 
         let chunk = chunked::generate_rows(row_range);
         let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);

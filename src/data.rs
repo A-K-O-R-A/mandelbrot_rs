@@ -18,7 +18,7 @@ pub mod chunked {
     pub const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
     //About 10GB = 10 * 1024 KB = 10 * 1024 * 1024;
     //Each chunk should contain a natural number of rows
-    pub const ROWS_PER_CHUNK: usize = 500; //500 rows
+    pub const ROWS_PER_CHUNK: usize = 4000; //500 rows
     pub const CHUNK_SIZE_RGB: usize = SIZE.0 * ROWS_PER_CHUNK * 3;
     pub const CHUNK_COUNT: usize = DATA_SIZE_RGB / CHUNK_SIZE_RGB;
 
@@ -39,11 +39,6 @@ pub mod chunked {
             );
             assert_eq!(CHUNK_COUNT * CHUNK_SIZE_RGB, DATA_SIZE_RGB);
         }
-
-        println!(
-            "Using {} chunks with {} bytes each",
-            CHUNK_COUNT, CHUNK_SIZE_RGB
-        );
     }
 
     ///Generate rows in a specifies row range (max is 0..SIZE.1)
@@ -105,8 +100,8 @@ pub mod chunked {
 pub mod single {
     use super::*;
 
-    const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
-    const DATA_SIZE_RGBA: usize = SIZE.0 * SIZE.1 * 4;
+    pub const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
+    pub const DATA_SIZE_RGBA: usize = SIZE.0 * SIZE.1 * 4;
 
     pub fn save_file(path: &str, data: &[u8]) -> Result<(), Box<dyn Error>> {
         let file = File::create(path)?;

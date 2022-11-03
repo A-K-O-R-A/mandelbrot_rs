@@ -9,10 +9,7 @@ edition = "2021"
 rayon = "1.5.3"
 png = "0.17.6"
 pbr = "1.0.4"
-
-# tiny-skia = "0.8.2"
-# png_pong = "0.8.2"
-# pix = "0.13.2"
+byte-unit = "4.0.17"
 
 [dependencies.palette]
 version = "0.6.1"
