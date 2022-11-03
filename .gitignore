@@ -6,3 +6,5 @@ flamegraph.svg
 # Renderd images during development
 *.png
 !images/*.png
+*.pdf
+*.ods
