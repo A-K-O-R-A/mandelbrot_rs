@@ -1,4 +1,5 @@
 use byte_unit::Byte;
+use pbr::MultiBar;
 use std::{error::Error, io::Write, time::Instant};
 
 mod color;
@@ -55,20 +56,28 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
     let mut writer = encoder.write_header()?;
     let mut stream_writer = writer.stream_writer_with_size(chunked::CHUNK_SIZE_RGB)?;
 
+    let mb = MultiBar::new();
+    let mut chunks_bar = mb.create_bar(chunked::CHUNK_COUNT as u64);
+    chunks_bar.message("Generating chunk: ");
+
+    //Start listening to bar changes
+    let _ = std::thread::spawn(move || {
+        mb.listen();
+    });
+
     for i in 0..chunked::CHUNK_COUNT {
         let start_row = i * chunked::ROWS_PER_CHUNK;
         let end_row = (i + 1) * chunked::ROWS_PER_CHUNK;
         let row_range = start_row..end_row;
 
-        println!("Generating chunk {}/{}", i, chunked::CHUNK_COUNT);
+        chunks_bar.inc();
 
         let chunk = chunked::generate_rows(row_range);
         let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
 
         stream_writer.write_all(&chunk_bin[..])?;
-        //writer.write_image_data(&chunk_bin[..])?;
-        //writer.write_chunk(png::chunk::sRGB, );
     }
+    chunks_bar.finish();
 
     let elapsed = now.elapsed();
     println!("Wrote chunks {:.2?}", elapsed);

@@ -46,6 +46,7 @@ pub mod chunked {
         let pb = Arc::new(Mutex::new(ProgressBar::new(
             (row_range.end - row_range.start) as u64,
         )));
+        pb.lock().unwrap().message("Row ");
 
         row_range
             .into_par_iter()
