@@ -1,5 +1,6 @@
 // For reading and opening files
 
+use std::error::Error;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
@@ -14,19 +15,21 @@ pub mod single {
 
     use super::*;
 
-    pub fn save_file(path: &str, data: &[u8]) {
-        let file = File::create(path).unwrap();
+    pub fn save_file(path: &str, data: &[u8]) -> Result<(), Box<dyn Error>> {
+        let file = File::create(path)?;
         let ref mut w = BufWriter::new(file);
 
         let mut encoder = png::Encoder::new(w, IMAGE_SIZE.0 as u32, IMAGE_SIZE.1 as u32); // Width is 2 pixels and height is 1.
         encoder.set_color(png::ColorType::Rgba);
         encoder.set_depth(png::BitDepth::Eight);
 
-        let mut writer = encoder.write_header().unwrap();
+        let mut writer = encoder.write_header()?;
 
         //let data = [255, 0, 0, 255, 0, 0, 0, 255]; // An array containing a RGBA sequence. First pixel is red and second pixel is black.
         //let data = [255, 0, 0, 255, 0, 0, 0, 255];
-        writer.write_image_data(data).unwrap(); // Save
+        writer.write_image_data(data)?; // Save
+
+        Ok(())
     }
 
     #[allow(dead_code)]
@@ -86,5 +89,3 @@ pub mod single {
             .collect()
     }
 }
-
-mod chunks {}
