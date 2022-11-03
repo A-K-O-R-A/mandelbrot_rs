@@ -10,6 +10,7 @@ use data::{chunked, single};
 
 pub const SIZE: (usize, usize) = (20000, 10000);
 pub const MAX_ITERATION: u64 = 1_000;
+pub const ROWS_PER_CHUNK: usize = 2000; //500 rows
 
 pub type Color = [u8; 3];
 
@@ -66,8 +67,8 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
     });
 
     for i in 0..chunked::CHUNK_COUNT {
-        let start_row = i * chunked::ROWS_PER_CHUNK;
-        let end_row = (i + 1) * chunked::ROWS_PER_CHUNK;
+        let start_row = i * ROWS_PER_CHUNK;
+        let end_row = (i + 1) * ROWS_PER_CHUNK;
         let row_range = start_row..end_row;
 
         chunks_bar.inc();
