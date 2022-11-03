@@ -39,7 +39,7 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
     encoder.set_depth(png::BitDepth::Eight);
 
     let mut writer = encoder.write_header()?;
-    //let mut stream_writer = writer.stream_writer_with_size(chunked::CHUNK_SIZE_RGB)?;
+    let mut stream_writer = writer.stream_writer_with_size(chunked::CHUNK_SIZE_RGB)?;
 
     for i in 0..chunked::CHUNK_COUNT {
         let start_row = i * chunked::ROWS_PER_CHUNK;
@@ -49,13 +49,13 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
         let chunk = chunked::generate_rows(row_range);
         let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
 
-        writer.write_image_data(&chunk_bin[..])?;
+        stream_writer.write_all(&chunk_bin[..])?;
+        //writer.write_image_data(&chunk_bin[..])?;
         //writer.write_chunk(png::chunk::sRGB, );
     }
 
     let elapsed = now.elapsed();
     println!("Wrote chunks {:.2?}", elapsed);
-    let now = Instant::now();
 
     Ok(())
 }
