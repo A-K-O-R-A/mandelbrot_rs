@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufWriter;
+use std::ops::Range;
 
 use pbr::ProgressBar;
 use rayon::prelude::*;
@@ -14,11 +15,12 @@ use crate::{Color, SIZE};
 pub mod chunked {
     use super::*;
 
-    const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
+    pub const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
     //About 10GB = 10 * 1024 KB = 10 * 1024 * 1024;
     //Each chunk should contain a natural number of rows
-    const CHUNK_SIZE_RGB: usize = SIZE.0 * 500 * 3; //500 rows
-    const CHUNK_COUNT: usize = DATA_SIZE_RGB / CHUNK_SIZE_RGB;
+    pub const ROWS_PER_CHUNK: usize = 500; //500 rows
+    pub const CHUNK_SIZE_RGB: usize = SIZE.0 * ROWS_PER_CHUNK * 3;
+    pub const CHUNK_COUNT: usize = DATA_SIZE_RGB / CHUNK_SIZE_RGB;
 
     pub fn check_size() {
         if CHUNK_COUNT * CHUNK_SIZE_RGB != DATA_SIZE_RGB {
@@ -44,7 +46,59 @@ pub mod chunked {
         );
     }
 
-    pub fn generate_chunk(row_start: usize, row_end: usize) {}
+    ///Generate rows in a specifies row range (max is 0..SIZE.1)
+    pub fn generate_rows(row_range: Range<usize>) -> Vec<Vec<Color>> {
+        let pb = Arc::new(Mutex::new(ProgressBar::new(
+            (row_range.end - row_range.start) as u64,
+        )));
+
+        row_range
+            .into_par_iter()
+            .map(move |y| {
+                let x_range = 0..SIZE.0;
+
+                let colors = x_range
+                    .into_par_iter()
+                    .map(|x| {
+                        //Get iteration count
+                        let iter = sets::mandelbrot::get_pixel(x as f64, y as f64);
+
+                        color::from_iterations(iter)
+                    })
+                    .collect();
+
+                //Reduces speed a bit
+                pb.lock().unwrap().inc();
+
+                colors
+            })
+            .collect()
+    }
+
+    pub fn chunk_to_rgb_binary(yx_map: &Vec<Vec<Color>>) -> Box<[u8; CHUNK_SIZE_RGB]> {
+        //Without multithreading
+
+        let column_count = yx_map.len();
+        let row_length = yx_map[0].len();
+
+        let mut data = Box::new([0_u8; CHUNK_SIZE_RGB]);
+
+        for y in 0..column_count {
+            for x in 0..row_length {
+                //Get bytes
+                let bytes = yx_map[y][x];
+                let pos = (x + (y * row_length)) * 3;
+
+                data[pos] = bytes[0];
+                data[pos + 1] = bytes[1];
+                data[pos + 2] = bytes[2];
+                //Alpha channel is always 25
+                //data[pos + 3] = 255;
+            }
+        }
+
+        data
+    }
 }
 
 #[allow(dead_code)]
