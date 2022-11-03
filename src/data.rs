@@ -18,7 +18,7 @@ pub mod chunked {
     pub const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
     //About 10GB = 10 * 1024 KB = 10 * 1024 * 1024;
     //Each chunk should contain a natural number of rows
-    pub const ROWS_PER_CHUNK: usize = 4000; //500 rows
+    pub const ROWS_PER_CHUNK: usize = 2000; //500 rows
     pub const CHUNK_SIZE_RGB: usize = SIZE.0 * ROWS_PER_CHUNK * 3;
     pub const CHUNK_COUNT: usize = DATA_SIZE_RGB / CHUNK_SIZE_RGB;
 

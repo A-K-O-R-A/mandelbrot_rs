@@ -8,7 +8,7 @@ mod sets;
 
 use data::{chunked, single};
 
-pub const SIZE: (usize, usize) = (40000, 20000);
+pub const SIZE: (usize, usize) = (20000, 10000);
 pub const MAX_ITERATION: u64 = 1_000;
 
 pub type Color = [u8; 3];
@@ -75,12 +75,29 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
         let chunk = chunked::generate_rows(row_range);
         let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
 
+        println!("Writing chunk {}...                             ", i + 1);
+
+        let now = Instant::now();
         stream_writer.write_all(&chunk_bin[..])?;
+        let elapsed = now.elapsed();
+
+        print!("{esc}[1A{esc}[2K", esc = 27 as char);
+        println!(
+            "Wrote Chunk {} in {:.2?} {esc}[2A",
+            i + 1,
+            elapsed,
+            esc = 27 as char
+        );
     }
     chunks_bar.finish();
 
     let elapsed = now.elapsed();
-    println!("Wrote chunks {:.2?}", elapsed);
+    println!(
+        "{esc}[2B\nWrote {} chunks in {:.2?}",
+        chunked::CHUNK_COUNT,
+        elapsed,
+        esc = 27 as char
+    );
 
     Ok(())
 }
