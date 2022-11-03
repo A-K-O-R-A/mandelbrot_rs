@@ -72,6 +72,7 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn single_main(path: &str) -> Result<(), Box<dyn Error>> {
     let now = Instant::now();
 
@@ -81,14 +82,14 @@ fn single_main(path: &str) -> Result<(), Box<dyn Error>> {
     println!("Calculation took      {:.2?}", elapsed);
     let now = Instant::now();
 
-    let bin = data::single::to_rgba_binary(&yx_map);
+    let bin = data::single::to_rgb_binary(&yx_map);
     //let writer = data::chunks::create_writer(r"./png_crate.png");
 
     let elapsed = now.elapsed();
     println!("Coversion took        {:.2?}", elapsed);
     let now = Instant::now();
 
-    data::single::save_file(path, &bin[..]);
+    data::single::save_file(path, &bin[..])?;
 
     let elapsed = now.elapsed();
     println!("Encoding/Writing      {:.2?}", elapsed);

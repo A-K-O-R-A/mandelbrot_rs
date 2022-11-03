@@ -21,7 +21,7 @@ pub mod single {
         let ref mut w = BufWriter::new(file);
 
         let mut encoder = png::Encoder::new(w, SIZE.0 as u32, SIZE.1 as u32); // Width is 2 pixels and height is 1.
-        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_color(png::ColorType::Rgb);
         encoder.set_depth(png::BitDepth::Eight);
 
         let mut writer = encoder.write_header()?;
