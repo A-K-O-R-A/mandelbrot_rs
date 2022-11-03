@@ -8,7 +8,7 @@ mod sets;
 
 use data::{chunked, single};
 
-pub const SIZE: (usize, usize) = (60000, 30000);
+pub const SIZE: (usize, usize) = (8000, 4000);
 pub const MAX_ITERATION: u64 = 1_000;
 pub const ROWS_PER_CHUNK: usize = 1_000; //500 rows
 
