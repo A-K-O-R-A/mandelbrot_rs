@@ -94,6 +94,23 @@ pub mod chunked {
 
         data
     }
+
+    //For time and file size estimates
+    const SIZE_FACTOR: f64 = 5.01171875e-08;
+    const TIME_FACTOR: f64 = 1.4357734375e-07;
+
+    pub fn size_estimate() -> byte_unit::AdjustedByte {
+        byte_unit::Byte::from_unit(
+            SIZE_FACTOR * (SIZE.0 * SIZE.1) as f64,
+            byte_unit::ByteUnit::MiB,
+        )
+        .unwrap()
+        .get_appropriate_unit(true)
+    }
+
+    pub fn time_estimate() -> f64 {
+        TIME_FACTOR * (SIZE.0 * SIZE.1) as f64
+    }
 }
 
 #[allow(dead_code)]

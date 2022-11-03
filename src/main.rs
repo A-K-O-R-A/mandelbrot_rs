@@ -8,9 +8,9 @@ mod sets;
 
 use data::{chunked, single};
 
-pub const SIZE: (usize, usize) = (20000, 10000);
+pub const SIZE: (usize, usize) = (60000, 30000);
 pub const MAX_ITERATION: u64 = 1_000;
-pub const ROWS_PER_CHUNK: usize = 2000; //500 rows
+pub const ROWS_PER_CHUNK: usize = 1_000; //500 rows
 
 pub type Color = [u8; 3];
 
@@ -28,15 +28,21 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
     chunked::check_size();
 
     println!("Generating RGB image");
-    println!(" - Dimensions {}x{}", SIZE.0, SIZE.1);
     println!(
-        " - Raw Size {}",
+        " - Dimensions {}x{} (raw size {})",
+        SIZE.0,
+        SIZE.1,
         Byte::from_bytes(single::DATA_SIZE_RGB as u128).get_appropriate_unit(true)
     );
     println!(
-        " - {} chunks with {} bytes each",
+        " - Splitting into {} chunks with {} bytes each",
         chunked::CHUNK_COUNT,
         Byte::from_bytes(chunked::CHUNK_SIZE_RGB as u128).get_appropriate_unit(true)
+    );
+    println!(" - Estimated time        ~{:.2}s", chunked::time_estimate());
+    println!(
+        " - Estimated file size   ~{}",
+        chunked::size_estimate().to_string()
     );
     println!("");
 
@@ -76,7 +82,10 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
         let chunk = chunked::generate_rows(row_range);
         let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
 
-        println!("Writing chunk {}...                             ", i + 1);
+        println!(
+            ". . . . . . writing chunk {}                         ",
+            i + 1
+        );
 
         let now = Instant::now();
         stream_writer.write_all(&chunk_bin[..])?;
@@ -84,7 +93,7 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
 
         print!("{esc}[1A{esc}[2K", esc = 27 as char);
         println!(
-            "Wrote Chunk {} in {:.2?} {esc}[2A",
+            "writing Chunk {} took {:.2?} {esc}[2A",
             i + 1,
             elapsed,
             esc = 27 as char
