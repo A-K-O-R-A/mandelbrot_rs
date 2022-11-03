@@ -20,12 +20,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
+    data::chunked::check_size();
+
     use std::fs::File;
     use std::io::BufWriter;
     use std::path::Path;
-
-    //About 10GB = 10 * 1024 KB = 10 * 1024 * 1024;
-    const CHUNK_SIZE: usize = 1024 * 4; //* 1024 * 2 *
 
     let path = Path::new(path);
     let file = File::create(path)?;

@@ -1,20 +1,58 @@
-// For reading and opening files
-
 use std::error::Error;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::Path;
+
+use pbr::ProgressBar;
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 
 use crate::color;
 use crate::sets;
 use crate::{Color, SIZE};
 
 #[allow(dead_code)]
+pub mod chunked {
+    use super::*;
+
+    const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
+    //About 10GB = 10 * 1024 KB = 10 * 1024 * 1024;
+    //Each chunk should contain a natural number of rows
+    const CHUNK_SIZE_RGB: usize = SIZE.0 * 500 * 3; //500 rows
+    const CHUNK_COUNT: usize = DATA_SIZE_RGB / CHUNK_SIZE_RGB;
+
+    pub fn check_size() {
+        if CHUNK_COUNT * CHUNK_SIZE_RGB != DATA_SIZE_RGB {
+            eprintln!(
+                "{} chunks with {} bytes each don' fit into {} bytes",
+                CHUNK_COUNT, CHUNK_SIZE_RGB, DATA_SIZE_RGB
+            );
+            assert_eq!(CHUNK_COUNT * CHUNK_SIZE_RGB, DATA_SIZE_RGB);
+        }
+
+        if (CHUNK_SIZE_RGB as f32 / SIZE.0 as f32) % 1. != 0. {
+            eprintln!(
+                "{} rows don't perfectly fit in all {} bytes of a chunk",
+                CHUNK_SIZE_RGB / SIZE.0,
+                CHUNK_SIZE_RGB,
+            );
+            assert_eq!(CHUNK_COUNT * CHUNK_SIZE_RGB, DATA_SIZE_RGB);
+        }
+
+        println!(
+            "Using {} chunks with {} bytes each",
+            CHUNK_COUNT, CHUNK_SIZE_RGB
+        );
+    }
+
+    pub fn generate_chunk(row_start: usize, row_end: usize) {}
+}
+
+#[allow(dead_code)]
 pub mod single {
+    use super::*;
+
     const DATA_SIZE_RGB: usize = SIZE.0 * SIZE.1 * 3;
     const DATA_SIZE_RGBA: usize = SIZE.0 * SIZE.1 * 4;
-
-    use super::*;
 
     pub fn save_file(path: &str, data: &[u8]) -> Result<(), Box<dyn Error>> {
         let file = File::create(path)?;
@@ -80,10 +118,6 @@ pub mod single {
 
         data
     }
-
-    use pbr::ProgressBar;
-    use rayon::prelude::*;
-    use std::sync::{Arc, Mutex};
 
     pub fn collect_color_map() -> Vec<Vec<Color>> {
         let pb = Arc::new(Mutex::new(ProgressBar::new((SIZE.1) as u64)));
