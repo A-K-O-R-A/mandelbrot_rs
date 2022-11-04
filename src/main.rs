@@ -82,7 +82,7 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
         //let chunk = chunked::generate_rows(row_range);
         //let chunk_bin = chunked::chunk_to_rgb_binary(&chunk);
 
-        let chunk_bin = chunked::generate_rows_bin(row_range);
+        let chunk_bin = chunked::generate_chunk(row_range);
 
         println!(
             ". . . . . . writing chunk {}                         ",
@@ -91,6 +91,7 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
 
         let now = Instant::now();
         stream_writer.write_all(&chunk_bin[..])?;
+        drop(chunk_bin);
         let elapsed = now.elapsed();
 
         print!("{esc}[1A{esc}[2K", esc = 27 as char);
@@ -100,6 +101,7 @@ fn chunked_main(path: &str) -> Result<(), Box<dyn Error>> {
             elapsed,
             esc = 27 as char
         );
+        println!("WROTE");
     }
     chunks_bar.finish();
 

@@ -40,6 +40,58 @@ pub mod chunked {
         }
     }
 
+    /*
+    let output = Arc::new([0_u8; CHUNK_SIZE]);
+
+    for t in 0..4 {
+        let cloned = output.clone();
+
+
+        let p = (cloned.as_ptr() as *mut u32).offset(t as isize)
+    }
+    */
+    ///Generate chunk withs a specifies row range (max is 0..SIZE.1)
+    pub fn generate_chunk(row_range: Range<usize>) -> Arc<Box<[u8; CHUNK_SIZE_RGB]>> {
+        let pb = Arc::new(Mutex::new(ProgressBar::new(
+            (row_range.end - row_range.start) as u64,
+        )));
+        pb.lock().unwrap().message("Row ");
+
+        let data = Arc::new(Box::new([0_u8; CHUNK_SIZE_RGB]));
+        let index_range = (row_range.start * SIZE.0)..(row_range.end * SIZE.0);
+        let first_index = index_range.start;
+
+        let cloned = data.clone();
+
+        row_range.into_par_iter().for_each(|y| {
+            (0..SIZE.0).into_par_iter().for_each(|x| {
+                //let x = pixel_i % SIZE.0;
+                //let y = pixel_i / SIZE.1;
+
+                //Get iteration count
+                let iteration_count = sets::mandelbrot::get_pixel(x as f64, y as f64);
+                let c = color::from_iterations(iteration_count);
+
+                //let cloned = data.clone();
+                let data_index = (x + (y * SIZE.0)) - first_index;
+
+                unsafe {
+                    let p1 = (cloned.as_ptr() as *mut u8).offset((data_index * 3) as isize);
+                    let p2 = p1.offset(1 as isize);
+                    let p3 = p2.offset(1 as isize);
+                    *p1 = c[0];
+                    *p2 = c[1];
+                    *p3 = c[2];
+                }
+            });
+
+            //Reduces speed a bit
+            pb.lock().unwrap().inc();
+        });
+
+        data
+    }
+
     ///Generate rows in a specifies row range (max is 0..SIZE.1)
     pub fn generate_rows(row_range: Range<usize>) -> Vec<Vec<Color>> {
         let pb = Arc::new(Mutex::new(ProgressBar::new(
