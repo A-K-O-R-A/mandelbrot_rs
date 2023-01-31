@@ -9,7 +9,7 @@ use mandelbrot::Mandelbrot;
 fn main() {
     let options = eframe::NativeOptions::default();
     eframe::run_native(
-        "Confirm exit",
+        "Mandelbrot",
         options,
         Box::new(|_cc| Box::new(MyApp::default())),
     );
