@@ -9,6 +9,7 @@ edition = "2021"
 rayon = "1.5.3"
 png = "0.17.6"
 pbr = "1.0.4"
+wgpu = "0.14.0"
 byte-unit = "4.0.17"
 
 [dependencies.palette]
