@@ -1,50 +1,34 @@
 // For reading and opening files
-use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
-//use std::time::Instant;
+use std::{fs::File, ops::Index};
 
-//use crate::color::*;
 use crate::{Color, IMAGE_SIZE};
 
 const DATA_SIZE: usize = IMAGE_SIZE.0 * IMAGE_SIZE.1 * 4;
 
-#[allow(dead_code)]
-pub mod transpose {
-    use super::*;
+pub struct ColorMap<T> {
+    pub width: usize,
+    pub height: usize,
+    // Data is stored in rows
+    pub data: Vec<T>,
+}
+impl ColorMap {
+    pub fn new(width: usize, height: usize) -> Self {
+        let vec = Vec::with_capacity(width * height);
 
-    pub fn xy_map(xy_map: &Vec<Vec<Color>>) -> Vec<Vec<Color>> {
-        let mut yx_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.1);
-
-        let mut y = 0;
-        while y < IMAGE_SIZE.1 {
-            let mut x = 0;
-            let mut row = Vec::with_capacity(IMAGE_SIZE.0);
-            while x < IMAGE_SIZE.0 {
-                row.push(xy_map[x][y]);
-                x += 1;
-            }
-            yx_map.push(row);
-            y += 1;
+        Self {
+            width,
+            height,
+            data,
         }
-        yx_map
     }
-
-    pub fn yx_map(yx_map: &Vec<Vec<Color>>) -> Vec<Vec<Color>> {
-        let mut xy_map: Vec<Vec<Color>> = Vec::with_capacity(IMAGE_SIZE.0);
-
-        let mut x = 0;
-        while x < IMAGE_SIZE.0 {
-            let mut y = 0;
-            let mut column = Vec::with_capacity(IMAGE_SIZE.1);
-            while y < IMAGE_SIZE.1 {
-                column.push(yx_map[y][x]);
-                y += 1;
-            }
-            xy_map.push(column);
-            x += 1;
-        }
-        xy_map
+}
+impl Index<(usize, usize)> for ColorMap<T> {
+    type Output = T;
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        // y * width is the offset of rows
+        self.data[index.1 * self.width + index.0]
     }
 }
 
@@ -162,21 +146,6 @@ pub mod png_crate {
                 data.append(&mut bytes);
             }
         }
-
-        /*
-        //With rayon parallel iterators
-        let data: Vec<u8> = yx_map
-            .par_iter()
-            .map(|x_vec| {
-                x_vec
-                    .par_iter()
-                    .map(|color| color.to_bytes())
-                    .flatten()
-                    .collect::<Vec<u8>>()
-            })
-            .flatten()
-            .collect();
-        */
 
         data[0..DATA_SIZE].to_vec()
     }
